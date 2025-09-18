@@ -1,9 +1,11 @@
-// server/src/utils/qrGenerator.js
-const QRCode = require('qrcode');
+import QRCode from "qrcode";
 
-async function generateQr(data) {
-  // returns data URL for QR
-  return await QRCode.toDataURL(data);
-}
-
-module.exports = { generateQr };
+export const generateQR = async (data) => {
+  try {
+    // data can be JSON or simple string
+    const qrString = JSON.stringify(data);
+    return await QRCode.toDataURL(qrString); // returns Base64 string
+  } catch (error) {
+    throw new Error("QR generation failed");
+  }
+};

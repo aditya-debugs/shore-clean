@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, UserPlus, Loader, AlertCircle, Waves } from 'lucide-react';
+import { Mail, Lock, LogIn, Loader, AlertCircle, Waves } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
-const Register = () => {
+const Login = () => {
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   
-  const { register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,10 +22,8 @@ const Register = () => {
     
     // Validate required fields
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
-    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -34,7 +31,7 @@ const Register = () => {
     }
 
     setLoading(true);
-    const result = await register(formData);
+    const result = await login(formData);
     setLoading(false);
     
     if (result.success) {
@@ -69,12 +66,12 @@ const Register = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ 
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80')` 
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1505142468610-359e7d316be0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1926&q=80')` 
           }}
         />
         
         <div className="relative z-10 max-w-md mx-auto px-6">
-          {/* Registration Form Card */}
+          {/* Login Form Card */}
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
             {/* Header */}
             <div className="text-center mb-8">
@@ -83,8 +80,8 @@ const Register = () => {
                   <Waves className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Join Shore Clean</h1>
-              <p className="text-gray-600">Create your account to start making a difference</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
+              <p className="text-gray-600">Sign in to continue your coastal cleanup journey</p>
             </div>
 
             {/* Error Message */}
@@ -95,37 +92,8 @@ const Register = () => {
               </div>
             )}
 
-            {/* Registration Form */}
+            {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name Field */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.name 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
-                    }`}
-                    placeholder="Enter your full name"
-                    disabled={loading}
-                  />
-                </div>
-                {errors.name && (
-                  <p className="mt-2 text-sm text-red-600">{errors.name}</p>
-                )}
-              </div>
-
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -175,7 +143,7 @@ const Register = () => {
                         ? 'border-red-300 bg-red-50' 
                         : 'border-gray-300 bg-white hover:border-gray-400'
                     }`}
-                    placeholder="Create a strong password (min 6 characters)"
+                    placeholder="Enter your password"
                     disabled={loading}
                   />
                 </div>
@@ -184,7 +152,7 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Register Button */}
+              {/* Login Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -193,26 +161,26 @@ const Register = () => {
                 {loading ? (
                   <>
                     <Loader className="h-5 w-5 mr-2 animate-spin" />
-                    Creating Account...
+                    Signing In...
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-5 w-5 mr-2" />
-                    Create Account
+                    <LogIn className="h-5 w-5 mr-2" />
+                    Sign In
                   </>
                 )}
               </button>
             </form>
 
-            {/* Login Link */}
+            {/* Register Link */}
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                Already have an account?{' '}
+                Don't have an account?{' '}
                 <Link 
-                  to="/login" 
+                  to="/register" 
                   className="text-cyan-600 hover:text-cyan-700 font-medium transition-colors duration-300"
                 >
-                  Sign In
+                  Create Account
                 </Link>
               </p>
             </div>
@@ -225,4 +193,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Login;

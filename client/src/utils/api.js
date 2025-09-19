@@ -1,169 +1,146 @@
-// API utility functions for ShoreClean frontend
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import axios from 'axios';
 
-// Generic API request handler
-const apiRequest = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
+// Create axios instance
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-  const defaultOptions = {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // Include cookies for authentication
-  };
-
-  const config = { ...defaultOptions, ...options };
-
-  try {
-    const response = await fetch(url, config);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP ${response.status}: ${response.statusText}`
-      );
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.token) {
+          config.headers.Authorization = `Bearer ${user.token}`;
+        }
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+      }
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-    return await response.json();
+// Response interceptor for error logging
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log('API Error Response:', error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
+// Event API functions
+export const getEvents = async (params = {}) => {
+  try {
+    const response = await api.get('/events', { params });
+    return response.data;
   } catch (error) {
-    console.error(`API request failed for ${endpoint}:`, error);
     throw error;
   }
 };
 
-// Authentication APIs
-export const authAPI = {
-  login: (credentials) =>
-    apiRequest("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    }),
-
-  register: (userData) =>
-    apiRequest("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    }),
-
-  logout: () => apiRequest("/auth/logout", { method: "POST" }),
-
-  getProfile: () => apiRequest("/profile"),
+export const getEventById = async (id) => {
+  try {
+    const response = await api.get(`/events/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Chat APIs
-export const chatAPI = {
-  // Get organization community messages (legacy)
-  getOrgChat: (orgId, page = 1, limit = 50) =>
-    apiRequest(`/chat/${orgId}?page=${page}&limit=${limit}`),
-
-  // Get event-specific chat messages (legacy)
-  getEventChat: (orgId, eventId, page = 1, limit = 50) =>
-    apiRequest(`/chat/${orgId}/${eventId}?page=${page}&limit=${limit}`),
-
-  // NEW GROUP-BASED ENDPOINTS
-  // Get all groups for an organization
-  getOrgGroups: (orgId) => apiRequest(`/groups/org/${orgId}`),
-
-  // Get messages for a specific group
-  getGroupMessages: (groupId, page = 1, limit = 50) =>
-    apiRequest(`/chat/groups/${groupId}?page=${page}&limit=${limit}`),
-
-  // Send message to a group
-  sendGroupMessage: (groupId, messageData) =>
-    apiRequest(`/chat/groups/${groupId}`, {
-      method: "POST",
-      body: JSON.stringify(messageData),
-    }),
+export const createEvent = async (eventData) => {
+  try {
+    const response = await api.post('/events', eventData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Groups APIs
-export const groupsAPI = {
-  // Get all groups for organization
-  getOrgGroups: (orgId) => apiRequest(`/groups/${orgId}`),
-
-  // Get specific group details
-  getGroup: (groupId) => apiRequest(`/groups/${groupId}`),
-
-  // Create new group (organizers only)
-  createGroup: (groupData) =>
-    apiRequest("/groups", {
-      method: "POST",
-      body: JSON.stringify(groupData),
-    }),
-
-  // Update group (organizers only)
-  updateGroup: (groupId, groupData) =>
-    apiRequest(`/groups/${groupId}`, {
-      method: "PUT",
-      body: JSON.stringify(groupData),
-    }),
-
-  // Delete group (admins only)
-  deleteGroup: (groupId) =>
-    apiRequest(`/groups/${groupId}`, { method: "DELETE" }),
-
-  // Join group
-  joinGroup: (groupId) =>
-    apiRequest(`/groups/${groupId}/join`, { method: "POST" }),
-
-  // Leave group
-  leaveGroup: (groupId) =>
-    apiRequest(`/groups/${groupId}/leave`, { method: "POST" }),
+export const updateEvent = async (id, eventData) => {
+  try {
+    const response = await api.put(`/events/${id}`, eventData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Events APIs
-export const eventsAPI = {
-  getEvents: () => apiRequest("/events"),
-  getEvent: (id) => apiRequest(`/events/${id}`),
-  createEvent: (eventData) =>
-    apiRequest("/events", {
-      method: "POST",
-      body: JSON.stringify(eventData),
-    }),
-  updateEvent: (id, eventData) =>
-    apiRequest(`/events/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(eventData),
-    }),
-  deleteEvent: (id) => apiRequest(`/events/${id}`, { method: "DELETE" }),
+export const deleteEvent = async (id) => {
+  try {
+    const response = await api.delete(`/events/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Volunteers APIs
-export const volunteersAPI = {
-  getVolunteers: () => apiRequest("/volunteers"),
-  registerVolunteer: (volunteerData) =>
-    apiRequest("/volunteers", {
-      method: "POST",
-      body: JSON.stringify(volunteerData),
-    }),
+// Registration API functions
+export const registerForEvent = async (eventId) => {
+  try {
+    const response = await api.post('/registrations', { eventId });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Donations APIs
-export const donationsAPI = {
-  getDonations: () => apiRequest("/donations"),
-  createDonation: (donationData) =>
-    apiRequest("/donations", {
-      method: "POST",
-      body: JSON.stringify(donationData),
-    }),
+export const getMyRegistrations = async () => {
+  try {
+    const response = await api.get('/registrations/my');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Certificates APIs
-export const certificatesAPI = {
-  getCertificates: () => apiRequest("/certificates"),
-  generateCertificate: (certificateData) =>
-    apiRequest("/certificates", {
-      method: "POST",
-      body: JSON.stringify(certificateData),
-    }),
+// Donation API functions
+export const createDonation = async (donationData) => {
+  try {
+    const response = await api.post('/donations', donationData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
-export default {
-  authAPI,
-  chatAPI,
-  eventsAPI,
-  volunteersAPI,
-  donationsAPI,
-  certificatesAPI,
+export const getDonations = async () => {
+  try {
+    const response = await api.get('/donations');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
+
+// Certificate API functions
+export const getCertificates = async () => {
+  try {
+    const response = await api.get('/certificates');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const downloadCertificate = async (certificateId) => {
+  try {
+    const response = await api.get(`/certificates/${certificateId}/download`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default api;

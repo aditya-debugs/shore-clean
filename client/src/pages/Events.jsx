@@ -16,28 +16,36 @@ const Events = () => {
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
 
-  useEffect(() => {
-    const uid = localStorage.getItem("userId");
-    setUserId(uid);
-  }, []);
 
   useEffect(() => {
     setLoading(true);
     setError("");
-    // Read events from localStorage
-    let allEvents = JSON.parse(localStorage.getItem("events")) || [];
-    // Simple pagination
-    const startIdx = (page - 1) * limit;
-    const pagedEvents = allEvents.slice(startIdx, startIdx + limit);
-    setEvents(pagedEvents);
-    setTotalPages(Math.max(1, Math.ceil(allEvents.length / limit)));
-    setLoading(false);
+    fetch(`${EVENTS_API}?page=${page}&limit=${limit}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch events");
+        return res.json();
+      })
+      .then((data) => {
+        setEvents(data.events || []);
+        setTotalPages(data.totalPages || 1);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Could not load events. Please try again later.");
+        setLoading(false);
+      });
   }, [page, limit]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
     try {
+      const token = localStorage.getItem("token");
       const endpoint = alreadyRSVPed ? `${EVENTS_API}/${eventId}/cancel-rsvp` : `${EVENTS_API}/${eventId}/rsvp`;
-      const res = await fetch(endpoint, { method: "POST" });
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
       if (!res.ok) throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
       const result = await res.json();
       setEvents((evts) =>

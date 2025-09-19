@@ -23,43 +23,38 @@ const EventDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
-  useEffect(() => {
-    setUserId(localStorage.getItem("userId"));
-  }, []);
 
   useEffect(() => {
     setLoading(true);
     setError("");
-
-    const events = JSON.parse(localStorage.getItem("events")) || [];
-    const found = events.find((ev) => ev._id === id);
-
-    if (found) {
-      setEvent(found);
-
-      // Load ratings
-      const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
-      if (ratings[id]) {
-        const { userRatings } = ratings[id];
-        const userRating = userRatings[userId] || 0;
-        setRating(userRating);
-
-        const values = Object.values(userRatings);
-        if (values.length > 0) {
-          const avg = values.reduce((a, b) => a + b, 0) / values.length;
-          setAvgRating(avg);
-        }
-      }
-
-      // Load comments
-      const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-      setComments(allComments[id] || []);
-    } else {
-      setError("Event not found.");
-    }
-
-    setLoading(false);
-  }, [id, userId]);
+    // Fetch event details from MongoDB
+    fetch(`/api/events/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setEvent(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Event not found.");
+        setLoading(false);
+      });
+    // Fetch comments from MongoDB
+    fetch(`/api/events/${id}/comments`)
+      .then(res => res.json())
+      .then(data => setComments(data))
+      .catch(() => setComments([]));
+    // Fetch ratings from MongoDB
+    fetch(`/api/events/${id}/ratings`)
+      .then(res => res.json())
+      .then(data => {
+        setRating(data.userRating || 0);
+        setAvgRating(data.avgRating || 0);
+      })
+      .catch(() => {
+        setRating(0);
+        setAvgRating(0);
+      });
+  }, [id]);
 
   const handleRSVP = async (alreadyRSVPed) => {
     if (!event) return;
@@ -76,43 +71,49 @@ const EventDetails = () => {
     }
   };
 
-  const handleRatingChange = (newValue) => {
+
+  const handleRatingChange = async (newValue) => {
     setRating(newValue);
-
-    const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
-    if (!ratings[id]) ratings[id] = { userRatings: {} };
-    ratings[id].userRatings[userId] = newValue;
-
-    const values = Object.values(ratings[id].userRatings);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    setAvgRating(avg);
-
-    localStorage.setItem("ratings", JSON.stringify(ratings));
+    try {
+      const res = await fetch(`/api/events/${id}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: newValue }),
+      });
+      const data = await res.json();
+      setAvgRating(data.avgRating || newValue);
+    } catch {
+      // fallback: keep local rating
+    }
   };
 
-  const handleAddComment = () => {
+
+  const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-    if (!allComments[id]) allComments[id] = [];
-
-    const newEntry = {
-      id: Date.now().toString(),
-      userId,
-      text: newComment,
-    };
-
-    allComments[id].push(newEntry);
-    setComments(allComments[id]);
-    localStorage.setItem("comments", JSON.stringify(allComments));
-    setNewComment("");
+    try {
+      const res = await fetch(`/api/events/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newComment }),
+      });
+      const data = await res.json();
+      setComments(data);
+      setNewComment("");
+    } catch {
+      // fallback: do nothing
+    }
   };
 
-  const handleDeleteComment = (commentId) => {
-    const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-    if (allComments[id]) {
-      allComments[id] = allComments[id].filter((c) => c.id !== commentId);
-      setComments(allComments[id]);
-      localStorage.setItem("comments", JSON.stringify(allComments));
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const res = await fetch(`/api/events/${id}/comments/${commentId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      setComments(data);
+    } catch {
+      // fallback: do nothing
     }
   };
 

@@ -37,10 +37,11 @@ export const AuthProvider = ({ children }) => {
       };
 
       // Save to localStorage and state
-      localStorage.setItem('user', JSON.stringify(userWithToken));
-      setCurrentUser(userWithToken);
-      
-      return { success: true };
+  localStorage.setItem('user', JSON.stringify(userWithToken));
+  localStorage.setItem('token', accessToken); // Ensure token is stored separately
+  console.log('Token stored after login:', accessToken);
+  setCurrentUser(userWithToken);
+  return { success: true };
     } catch (error) {
       console.error('Login error:', error.response?.data);
       return { 
@@ -58,9 +59,11 @@ export const AuthProvider = ({ children }) => {
         ...user,
         token: accessToken
       };
-      localStorage.setItem('user', JSON.stringify(userWithToken));
-      setCurrentUser(userWithToken);
-      return { success: true };
+  localStorage.setItem('user', JSON.stringify(userWithToken));
+  localStorage.setItem('token', accessToken); // Ensure token is stored separately
+  console.log('Token stored after register:', accessToken);
+  setCurrentUser(userWithToken);
+  return { success: true };
     } catch (error) {
       console.error('Register error:', error.response?.data);
       return { 
@@ -71,8 +74,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
-    setCurrentUser(null);
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  setCurrentUser(null);
   };
 
   const updateProfile = async (userData) => {

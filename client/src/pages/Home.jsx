@@ -283,43 +283,24 @@ const Home = () => {
             ))}
           </div>
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/events"
-                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
-                >
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Browse Events
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
-                >
-                  <Trophy className="h-5 w-5 mr-2" />
-                  My Dashboard
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/register"
-                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
-                >
-                  <Users className="h-5 w-5 mr-2" />
-                  Join as Volunteer
-                </Link>
-                <Link
-                  to="/login"
-                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
-                >
-                  <LogIn className="h-5 w-5 mr-2" />
-                  Sign In
-                </Link>
-              </>
-            )}
-          </div>
+          {isAuthenticated && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                to="/events"
+                className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-50 hover:text-cyan-900"
+              >
+                <Calendar className="h-5 w-5 mr-2" />
+                Browse Events
+              </Link>
+              <Link 
+                to="/dashboard"
+                className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl border border-cyan-500/50 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-700"
+              >
+                <Trophy className="h-5 w-5 mr-2" />
+                My Dashboard
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -414,12 +395,7 @@ const Home = () => {
             </div>
           )}
           <div className="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/events">
-              {/* <button className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 hover:scale-105 hover:shadow-2xl transition-all duration-300 font-semibold cursor-pointer">
-                View All Events
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </button> */}
-            </Link>
+            
             <Link to="/admin/create-event">
               <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
                 Create Event
@@ -544,6 +520,17 @@ const Home = () => {
             </div>
           )}
         </div>
+        {/* Donation & Dashboard Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+          
+          <Link 
+            to="/dashboard"
+            className="px-8 py-4 bg-cyan-600 text-white rounded-xl font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105 hover:bg-cyan-700 ml-0 sm:ml-4"
+          >
+            Go to Dashboard
+          </Link>
+          
+        </div>
       </section>
 
       {/* CTA Section */}
@@ -566,6 +553,7 @@ const Home = () => {
               >
                 {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
               </Link>
+              
             </div>
           </div>
         </div>

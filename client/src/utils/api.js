@@ -53,13 +53,63 @@ export const authAPI = {
 
 // Chat APIs
 export const chatAPI = {
-  // Get organization community messages
+  // Get organization community messages (legacy)
   getOrgChat: (orgId, page = 1, limit = 50) =>
     apiRequest(`/chat/${orgId}?page=${page}&limit=${limit}`),
 
-  // Get event-specific chat messages
+  // Get event-specific chat messages (legacy)
   getEventChat: (orgId, eventId, page = 1, limit = 50) =>
     apiRequest(`/chat/${orgId}/${eventId}?page=${page}&limit=${limit}`),
+
+  // NEW GROUP-BASED ENDPOINTS
+  // Get all groups for an organization
+  getOrgGroups: (orgId) => apiRequest(`/groups/org/${orgId}`),
+
+  // Get messages for a specific group
+  getGroupMessages: (groupId, page = 1, limit = 50) =>
+    apiRequest(`/chat/groups/${groupId}?page=${page}&limit=${limit}`),
+
+  // Send message to a group
+  sendGroupMessage: (groupId, messageData) =>
+    apiRequest(`/chat/groups/${groupId}`, {
+      method: "POST",
+      body: JSON.stringify(messageData),
+    }),
+};
+
+// Groups APIs
+export const groupsAPI = {
+  // Get all groups for organization
+  getOrgGroups: (orgId) => apiRequest(`/groups/org/${orgId}`),
+
+  // Get specific group details
+  getGroup: (groupId) => apiRequest(`/groups/${groupId}`),
+
+  // Create new group (organizers only)
+  createGroup: (groupData) =>
+    apiRequest("/groups", {
+      method: "POST",
+      body: JSON.stringify(groupData),
+    }),
+
+  // Update group (organizers only)
+  updateGroup: (groupId, groupData) =>
+    apiRequest(`/groups/${groupId}`, {
+      method: "PUT",
+      body: JSON.stringify(groupData),
+    }),
+
+  // Delete group (admins only)
+  deleteGroup: (groupId) =>
+    apiRequest(`/groups/${groupId}`, { method: "DELETE" }),
+
+  // Join group
+  joinGroup: (groupId) =>
+    apiRequest(`/groups/${groupId}/join`, { method: "POST" }),
+
+  // Leave group
+  leaveGroup: (groupId) =>
+    apiRequest(`/groups/${groupId}/leave`, { method: "POST" }),
 };
 
 // Events APIs

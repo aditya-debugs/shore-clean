@@ -1,10 +1,12 @@
-// ChatCommunity.jsx - Real-time chat component for ShoreClean
+// ChatCommunity.jsx - Group-based real-time chat component for ShoreClean
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "../hooks/useSocket";
-import { chatAPI } from "../utils/api";
+import { chatAPI, groupsAPI } from "../utils/api";
 import MessageBubble from "../components/MessageBubble";
 import OnlineUsersList from "../components/OnlineUsersList";
 import TypingIndicator from "../components/TypingIndicator";
+import GroupList from "../components/GroupList";
+import GroupManagement from "../components/GroupManagement";
 
 // Mock user data - replace with actual auth context
 const mockUser = {
@@ -19,27 +21,27 @@ const ChatCommunity = () => {
   const [messageInput, setMessageInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [chatHistory, setChatHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState("event"); // 'event' or 'org'
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const [showOnlineUsers, setShowOnlineUsers] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showGroupManagement, setShowGroupManagement] = useState(false);
 
-  // Mock data - replace with actual props/params
+  // Mock data - replace with actual props/params or context
   const orgId = "org123";
-  const eventId = "event456";
-  const eventName = "Marine Beach Cleanup Drive";
   const orgName = "Mumbai Coastal Guardians";
 
-  // WebSocket connection
+  // WebSocket connection - now group-based
   const {
     isConnected,
     messages,
     typingUsers,
     onlineUsers,
+    currentGroup,
     error,
     sendMessage,
     handleTyping,
-  } = useSocket(orgId, activeTab === "event" ? eventId : null, mockUser);
+  } = useSocket(orgId, selectedGroup?._id, mockUser);
 
   // Refs for auto-scroll and input
   const messagesEndRef = useRef(null);
@@ -56,32 +58,46 @@ const ChatCommunity = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Load chat history from API
+  // Load chat history from API - now group-based
   useEffect(() => {
     const loadChatHistory = async () => {
+      if (!selectedGroup) {
+        setChatHistory([]);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        let response;
-        if (activeTab === "event" && eventId) {
-          response = await chatAPI.getEventChat(orgId, eventId);
-        } else {
-          response = await chatAPI.getOrgChat(orgId);
-        }
+        const response = await chatAPI.getGroupMessages(selectedGroup._id);
         setChatHistory(response.data.messages || []);
       } catch (error) {
-        console.error("Failed to load chat history:", error);
+        console.error("Failed to load group chat history:", error);
+        setChatHistory([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadChatHistory();
-  }, [activeTab, orgId, eventId]);
+  }, [selectedGroup]);
+
+  // Handle group selection
+  const handleGroupSelect = (group) => {
+    setSelectedGroup(group);
+    setChatHistory([]); // Clear previous messages
+  };
+
+  // Handle back to group list
+  const handleBackToGroups = () => {
+    setSelectedGroup(null);
+    setChatHistory([]);
+  };
 
   // Handle sending messages
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !isConnected) return;
+    if (!messageInput.trim() || !isConnected || !selectedGroup) return;
 
     sendMessage(messageInput);
     setMessageInput("");
@@ -156,8 +172,8 @@ const ChatCommunity = () => {
     return groups;
   };
 
-  // Quick emoji reactions
-  const quickEmojis = ["👍", "❤️", "😊", "🎉", "👏", "🌊", "🏖️", "♻️"];
+  // Quick emoji selector
+  const quickEmojis = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🌊", "🏖️"];
 
   const addEmoji = (emoji) => {
     setMessageInput((prev) => prev + emoji);
@@ -227,237 +243,257 @@ const ChatCommunity = () => {
                   onToggle={() => setShowOnlineUsers(!showOnlineUsers)}
                 />
               </div>
+
+              {/* Group Management Button (for organizers/admins) */}
+              {(mockUser.role === "organizer" || mockUser.role === "admin") && (
+                <button
+                  onClick={() => setShowGroupManagement(true)}
+                  className="flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium">Manage</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Chat Tabs */}
-          <div className="mt-6 flex space-x-1 bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setActiveTab("event")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "event"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              🏖️ {eventName}
-            </button>
-            <button
-              onClick={() => setActiveTab("org")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "org"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              🌊 {orgName}
-            </button>
-          </div>
+          {/* Group Navigation */}
+          {selectedGroup ? (
+            <div className="mt-6 flex items-center justify-between bg-gray-100 rounded-xl p-3">
+              <button
+                onClick={handleBackToGroups}
+                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <span>←</span>
+                <span className="text-sm">Back to Groups</span>
+              </button>
+              <div className="flex items-center space-x-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                  style={{ backgroundColor: selectedGroup.color || "#3B82F6" }}
+                >
+                  {selectedGroup.icon || "💬"}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {selectedGroup.name}
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    {selectedGroup.type === "event"
+                      ? "Event Group"
+                      : selectedGroup.type === "certificate"
+                      ? "Certificate Group"
+                      : "Discussion Group"}
+                  </p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                {currentGroup?.userCount || selectedGroup.members?.length || 0}{" "}
+                members
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 bg-gray-100 rounded-xl p-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                🌊 {orgName} Community
+              </h3>
+              <p className="text-xs text-gray-600">
+                Select a group below to start chatting with members
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Chat Container */}
+      {/* Main Content Container */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Chat Messages Area */}
-          <div
-            ref={chatContainerRef}
-            className="h-96 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-600">Loading messages...</span>
-              </div>
-            ) : (
-              <>
-                {Object.entries(messageGroups).map(([dateKey, dayMessages]) => (
-                  <div key={dateKey}>
-                    {/* Date Separator */}
-                    <div className="flex items-center justify-center my-6">
-                      <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-xs font-medium shadow-sm">
-                        {formatDate(new Date(dateKey))}
-                      </div>
-                    </div>
-
-                    {/* Messages for this date */}
-                    {dayMessages.map((message, index) => (
-                      <MessageBubble
-                        key={message._id || index}
-                        message={message}
-                        isCurrentUser={message.userId === mockUser.id}
-                        showSender={true}
-                      />
-                    ))}
-                  </div>
-                ))}
-
-                {/* Typing Indicator */}
-                <TypingIndicator
-                  typingUsers={typingUsers}
-                  currentUserId={mockUser.id}
-                />
-
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-
-          {/* Message Input Area */}
-          <div className="p-4 bg-white border-t border-gray-100">
-            {error && (
-              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-                <svg
-                  className="w-5 h-5 text-red-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Quick Emoji Bar */}
-            {showEmojiPicker && (
-              <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex flex-wrap gap-2">
-                  {quickEmojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => addEmoji(emoji)}
-                      className="text-lg hover:bg-gray-200 rounded-lg p-2 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSendMessage} className="flex space-x-3">
-              <div className="flex-1 relative">
-                <textarea
-                  ref={inputRef}
-                  value={messageInput}
-                  onChange={handleInputChange}
-                  placeholder={`Message ${
-                    activeTab === "event" ? eventName : orgName
-                  }...`}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows="1"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                  disabled={!isConnected}
-                />
-
-                {/* Emoji Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  😊
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!messageInput.trim() || !isConnected}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+          {!selectedGroup ? (
+            /* Group Selection View */
+            <GroupList
+              orgId={orgId}
+              orgName={orgName}
+              onSelectGroup={handleGroupSelect}
+              currentUser={mockUser}
+              selectedGroupId={selectedGroup?._id}
+            />
+          ) : (
+            <>
+              {/* Chat Messages Area */}
+              <div
+                ref={chatContainerRef}
+                className="h-96 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              </button>
-            </form>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-3 text-gray-600">
+                      Loading messages...
+                    </span>
+                  </div>
+                ) : chatHistory.length === 0 && messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-center">
+                    <div>
+                      <div className="text-4xl mb-3">💬</div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Start the conversation!
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        Be the first to send a message in {selectedGroup.name}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {Object.entries(messageGroups).map(
+                      ([dateKey, dayMessages]) => (
+                        <div key={dateKey}>
+                          {/* Date Separator */}
+                          <div className="flex items-center justify-center my-6">
+                            <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-xs font-medium shadow-sm">
+                              {formatDate(new Date(dateKey))}
+                            </div>
+                          </div>
 
-            {/* Footer Info */}
-            <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-              <div className="flex items-center space-x-4">
-                <span>Press Enter to send, Shift+Enter for new line</span>
-                {isTyping && (
-                  <span className="text-blue-500 font-medium">
-                    You are typing...
-                  </span>
+                          {/* Messages for this date */}
+                          {dayMessages.map((message, index) => (
+                            <MessageBubble
+                              key={message._id || index}
+                              message={message}
+                              isCurrentUser={message.userId === mockUser.id}
+                              showSender={true}
+                            />
+                          ))}
+                        </div>
+                      )
+                    )}
+
+                    {/* Typing Indicator */}
+                    <TypingIndicator
+                      typingUsers={typingUsers}
+                      currentUserId={mockUser.id}
+                    />
+
+                    <div ref={messagesEndRef} />
+                  </>
                 )}
               </div>
-              <div className="flex items-center space-x-2">
-                <span>{onlineUsers.length} people online</span>
-                <span>•</span>
-                <span
-                  className={isConnected ? "text-green-600" : "text-red-600"}
-                >
-                  {isConnected ? "Connected" : "Disconnected"}
-                </span>
+
+              {/* Message Input Area */}
+              <div className="p-4 bg-white border-t border-gray-100">
+                {error && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+                    <svg
+                      className="w-5 h-5 text-red-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Quick Emoji Bar */}
+                {showEmojiPicker && (
+                  <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex flex-wrap gap-2">
+                      {quickEmojis.map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => addEmoji(emoji)}
+                          className="text-lg hover:bg-gray-200 rounded-lg p-2 transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleSendMessage} className="flex space-x-3">
+                  <div className="flex-1 relative">
+                    <textarea
+                      ref={inputRef}
+                      value={messageInput}
+                      onChange={handleInputChange}
+                      placeholder={`Message ${selectedGroup.name}...`}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      rows="1"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(e);
+                        }
+                      }}
+                      disabled={!isConnected}
+                    />
+
+                    {/* Emoji Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      😊
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!messageInput.trim() || !isConnected}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                      />
+                    </svg>
+                  </button>
+                </form>
+
+                {/* Footer Info */}
+                <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                  <span>Press Enter to send, Shift+Enter for new line</span>
+                  <div className="flex items-center space-x-2">
+                    <span>{onlineUsers.length} people online</span>
+                    <span>•</span>
+                    <span
+                      className={
+                        isConnected ? "text-green-600" : "text-red-600"
+                      }
+                    >
+                      {isConnected ? "Connected" : "Disconnected"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Features Panel */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              Quick Actions
-            </h3>
-            <div className="space-y-2">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                📋 View Event Details
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                📱 Share Location
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                📷 Upload Photo
-              </button>
-            </div>
-          </div>
-
-          {/* Event Info */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              Event Info
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div>📅 Tomorrow at 8:00 AM</div>
-              <div>📍 Marine Drive, Mumbai</div>
-              <div>👥 42 volunteers joined</div>
-            </div>
-          </div>
-
-          {/* Community Stats */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              Community
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div>
-                💬 {messages.length + chatHistory.length} messages today
-              </div>
-              <div>👥 {onlineUsers.length} online now</div>
-              <div>🌊 Mumbai Coastal Guardians</div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -466,6 +502,15 @@ const ChatCommunity = () => {
         <div
           className="fixed inset-0 z-30"
           onClick={() => setShowOnlineUsers(false)}
+        />
+      )}
+
+      {/* Group Management Modal */}
+      {showGroupManagement && (
+        <GroupManagement
+          orgId={orgId}
+          currentUser={mockUser}
+          onClose={() => setShowGroupManagement(false)}
         />
       )}
     </div>

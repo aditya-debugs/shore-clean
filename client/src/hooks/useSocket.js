@@ -1,22 +1,23 @@
-// WebSocket hook for real-time chat functionality
+// WebSocket hook for real-time GROUP-BASED chat functionality
 import { useEffect, useRef, useState } from "react";
 // import { io } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
-export const useSocket = (orgId, eventId = null, user = null) => {
+export const useSocket = (orgId, groupId = null, user = null) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [error, setError] = useState(null);
+  const [currentGroup, setCurrentGroup] = useState(null);
 
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (!orgId || !user) return;
+    if (!orgId || !groupId || !user) return;
 
     // Initialize socket connection (commented out for now since socket.io-client isn't installed)
     /*
@@ -34,14 +35,12 @@ export const useSocket = (orgId, eventId = null, user = null) => {
       setIsConnected(true);
       setError(null);
       
-      // Join the appropriate room
-      const roomId = eventId ? `${orgId}_${eventId}` : `${orgId}_general`;
+      // Join the group room (new group-based approach)
       newSocket.emit('join_room', {
         orgId,
-        eventId,
+        groupId,
         userId: user.id,
         username: user.name,
-        roomId,
       });
     });
 
@@ -63,6 +62,21 @@ export const useSocket = (orgId, eventId = null, user = null) => {
 
     newSocket.on('message_history', (history) => {
       setMessages(history);
+    });
+
+    // Group info handler
+    newSocket.on('group_info', (groupInfo) => {
+      setCurrentGroup(groupInfo);
+    });
+
+    // Join success handler
+    newSocket.on('join_success', (data) => {
+      console.log(`Successfully joined group: ${data.groupName}`);
+      setCurrentGroup({ 
+        groupId: data.groupId, 
+        name: data.groupName,
+        userCount: data.userCount 
+      });
     });
 
     // Typing indicator handlers
@@ -141,7 +155,7 @@ export const useSocket = (orgId, eventId = null, user = null) => {
         status: "online",
       },
     ]);
-  }, [orgId, eventId, user]);
+  }, [orgId, groupId, user]);
 
   // Send message function
   const sendMessage = (messageText) => {
@@ -149,7 +163,7 @@ export const useSocket = (orgId, eventId = null, user = null) => {
 
     const messageData = {
       orgId,
-      eventId,
+      groupId,
       userId: user.id,
       username: user.name,
       message: messageText.trim(),
@@ -176,7 +190,7 @@ export const useSocket = (orgId, eventId = null, user = null) => {
 
     // socket.emit('typing', {
     //   orgId,
-    //   eventId,
+    //   groupId,
     //   userId: user.id,
     //   username: user.name,
     // });
@@ -187,7 +201,7 @@ export const useSocket = (orgId, eventId = null, user = null) => {
 
     // socket.emit('stop_typing', {
     //   orgId,
-    //   eventId,
+    //   groupId,
     //   userId: user.id,
     //   username: user.name,
     // });
@@ -212,6 +226,7 @@ export const useSocket = (orgId, eventId = null, user = null) => {
     messages,
     typingUsers,
     onlineUsers,
+    currentGroup,
     error,
     sendMessage,
     handleTyping,

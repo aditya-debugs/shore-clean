@@ -4,6 +4,8 @@ const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
 const { createDonation, listDonations } = require('../controllers/donationController');
 
-router.post('/', protect, createDonation); // or allow guest donations by removing protect
-router.get('/', protect, listDonations); // admin/organizer view
+// If you want donations open to guests → remove `protect`
+router.post('/', createDonation);  
+router.get('/', protect, listDonations); 
+
 module.exports = router;

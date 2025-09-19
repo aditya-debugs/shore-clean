@@ -1,11 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Trophy, Heart, Sparkles, Globe, Shield, Award, Waves, ChevronLeft, ChevronRight, MapPin, Clock, ArrowRight, Star, Loader, Quote } from 'lucide-react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Calendar,
+  Users,
+  Trophy,
+  Heart,
+  Sparkles,
+  Globe,
+  Shield,
+  Award,
+  Waves,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Clock,
+  ArrowRight,
+  Star,
+  Loader,
+  Quote,
+  LogIn,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Home = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState([]);
   const [carouselSlides, setCarouselSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -13,168 +32,140 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const { currentUser } = useAuth();
   const isAuthenticated = !!currentUser;
 
   useEffect(() => {
-    // Simulate API call
-    const fetchData = async () => {
+    setTimeout(() => {
+      // Quotes
+      setQuotes([
+        {
+          text: "Together, we can turn the tide against ocean pollution.",
+          author: "ShoreClean Team",
+        },
+        {
+          text: "Every small action counts towards a cleaner coastline.",
+          author: "Volunteer",
+        },
+        {
+          text: "Protecting our beaches is protecting our future.",
+          author: "Unknown",
+        },
+      ]);
+      // Carousel slides
+      setCarouselSlides([
+        {
+          title: "Join the Coastal Cleanup Movement",
+          description:
+            "Be part of the solution to protect our oceans and beaches from pollution.",
+          bgImage:
+            "https://images.pexels.com/photos/9034686/pexels-photo-9034686.jpeg",
+          quoteIndex: 0,
+        },
+        {
+          title: "Track Your Environmental Impact",
+          description:
+            "See real-time data on how your efforts contribute to cleaner coastlines.",
+          bgImage:
+            "https://images.pexels.com/photos/9034669/pexels-photo-9034669.jpeg",
+          quoteIndex: 1,
+        },
+        {
+          title: "Make a Lasting Impact",
+          description:
+            "Join thousands of volunteers making our coastlines cleaner and safer.",
+          bgImage:
+            "https://images.pexels.com/photos/13178207/pexels-photo-13178207.jpeg",
+          quoteIndex: 2,
+        },
+      ]);
+      // Testimonials
+      setTestimonials([
+        {
+          id: 1,
+          name: "Priya Sharma",
+          role: "Environmental Activist",
+          image:
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+          text: "ShoreClean has revolutionized how we organize cleanup drives. The AI-powered coordination and real-time tracking have increased our volunteer participation by 300%.",
+          rating: 5,
+        },
+        {
+          id: 2,
+          name: "Arjun Patel",
+          role: "Volunteer Coordinator",
+          image:
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+          text: "The gamification features keep volunteers engaged and motivated. Our regular participants have grown from 20 to over 200 in just six months!",
+          rating: 5,
+        },
+        {
+          id: 3,
+          name: "Dr. Meera Krishnan",
+          role: "Marine Biologist",
+          image:
+            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
+          text: "The impact tracking and analytics help us measure our environmental progress scientifically. It's incredibly valuable for our research and reporting.",
+          rating: 5,
+        },
+      ]);
+      // Features
+      setFeatures([
+        {
+          icon: Users,
+          title: "Role-Based Access",
+          description:
+            "Separate dashboards for organizers and volunteers with tailored experiences.",
+          gradient: "from-blue-400 to-cyan-400",
+        },
+        {
+          icon: Calendar,
+          title: "Smart Event Management",
+          description:
+            "Create, edit, and track events with QR-based attendance and real-time updates.",
+          gradient: "from-cyan-400 to-teal-400",
+        },
+        {
+          icon: Sparkles,
+          title: "AI-Powered Content",
+          description:
+            "Automated flyer generation and multilingual chatbot support for better engagement.",
+          gradient: "from-teal-400 to-green-400",
+        },
+        {
+          icon: Trophy,
+          title: "Gamified Rewards",
+          description:
+            "Earn badges, certificates, and rewards while making a real environmental impact.",
+          gradient: "from-green-400 to-emerald-400",
+        },
+        {
+          icon: Shield,
+          title: "Impact Tracking",
+          description:
+            "Real-time analytics dashboard with comprehensive impact measurement and reporting.",
+          gradient: "from-purple-400 to-indigo-400",
+        },
+        {
+          icon: Globe,
+          title: "CSR Integration",
+          description:
+            "Seamless donation management with 80G tax benefits and corporate partnerships.",
+          gradient: "from-indigo-400 to-blue-400",
+        },
+      ]);
+      // Load events from localStorage
+      const storedEvents = localStorage.getItem("events");
+      let events = [];
       try {
-        setLoading(true);
-        
-        // Simulated data - replace with actual API calls
-        setTimeout(() => {
-          setQuotes([
-            {
-              text: "The ocean is a mighty harmonist. The best way to appreciate it is to help preserve it.",
-              author: "William Wordsworth"
-            },
-            {
-              text: "We won't have a society if we destroy the environment. Every piece of plastic removed from our beaches matters.",
-              author: "Margaret Mead"
-            },
-            {
-              text: "The greatest threat to our planet is the belief that someone else will save it. Join us today.",
-              author: "Robert Swan"
-            },
-            {
-              text: "Clean beaches don't happen by chance, they happen by change. Be that change.",
-              author: "Unknown"
-            }
-          ]);
-          
-          setCarouselSlides([
-            {
-              title: "Join the Coastal Cleanup Movement",
-              description: "Be part of the solution to protect our oceans and beaches from pollution.",
-              bgImage: "https://images.pexels.com/photos/9034686/pexels-photo-9034686.jpeg",
-              quoteIndex: 0
-            },
-            {
-              title: "Track Your Environmental Impact",
-              description: "See real-time data on how your efforts contribute to cleaner coastlines.",
-              bgImage: "https://images.pexels.com/photos/9034669/pexels-photo-9034669.jpeg",
-              quoteIndex: 1
-            },
-            {
-              title: "Make a Lasting Impact",
-              description: "Join thousands of volunteers making our coastlines cleaner and safer.",
-              bgImage: "https://images.pexels.com/photos/13178207/pexels-photo-13178207.jpeg",
-              quoteIndex: 2
-            }
-          ]);
-          
-          // Demo events data
-          setUpcomingEvents([
-            {
-              id: 1,
-              title: "Marine Beach Cleanup Drive",
-              date: "2023-10-28",
-              time: "08:00 AM",
-              location: "Marine Drive, Mumbai",
-              participants: 42,
-              image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-              organizer: "Mumbai Coastal Guardians"
-            },
-            {
-              id: 2,
-              title: "Juhu Beach Restoration",
-              date: "2023-11-05",
-              time: "07:30 AM",
-              location: "Juhu Beach, Mumbai",
-              participants: 35,
-              image: "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-              organizer: "Beach Warriors Collective"
-            },
-            {
-              id: 3,
-              title: "Versova Coastal Conservation",
-              date: "2023-11-12",
-              time: "09:00 AM",
-              location: "Versova Beach, Mumbai",
-              participants: 28,
-              image: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-              organizer: "Ocean Preservation Society"
-            }
-          ]);
-          
-          // Demo testimonials data
-          setTestimonials([
-            {
-              id: 1,
-              name: "Priya Sharma",
-              role: "Environmental Activist",
-              image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-              text: "ShoreClean has revolutionized how we organize cleanup drives. The AI-powered coordination and real-time tracking have increased our volunteer participation by 300%.",
-              rating: 5
-            },
-            {
-              id: 2,
-              name: "Arjun Patel",
-              role: "Volunteer Coordinator",
-              image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-              text: "The gamification features keep volunteers engaged and motivated. Our regular participants have grown from 20 to over 200 in just six months!",
-              rating: 5
-            },
-            {
-              id: 3,
-              name: "Dr. Meera Krishnan",
-              role: "Marine Biologist",
-              image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
-              text: "The impact tracking and analytics help us measure our environmental progress scientifically. It's incredibly valuable for our research and reporting.",
-              rating: 5
-            }
-          ]);
-          
-          setFeatures([
-            {
-              icon: Users,
-              title: 'Role-Based Access',
-              description: 'Separate dashboards for organizers and volunteers with tailored experiences.',
-              gradient: 'from-blue-400 to-cyan-400'
-            },
-            {
-              icon: Calendar,
-              title: 'Smart Event Management',
-              description: 'Create, edit, and track events with QR-based attendance and real-time updates.',
-              gradient: 'from-cyan-400 to-teal-400'
-            },
-            {
-              icon: Sparkles,
-              title: 'AI-Powered Content',
-              description: 'Automated flyer generation and multilingual chatbot support for better engagement.',
-              gradient: 'from-teal-400 to-green-400'
-            },
-            {
-              icon: Trophy,
-              title: 'Gamified Rewards',
-              description: 'Earn badges, certificates, and rewards while making a real environmental impact.',
-              gradient: 'from-green-400 to-emerald-400'
-            },
-            {
-              icon: Shield,
-              title: 'Impact Tracking',
-              description: 'Real-time analytics dashboard with comprehensive impact measurement and reporting.',
-              gradient: 'from-purple-400 to-indigo-400'
-            },
-            {
-              icon: Globe,
-              title: 'CSR Integration',
-              description: 'Seamless donation management with 80G tax benefits and corporate partnerships.',
-              gradient: 'from-indigo-400 to-blue-400'
-            }
-          ]);
-          
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setLoading(false);
+        events = storedEvents ? JSON.parse(storedEvents) : [];
+      } catch (e) {
+        events = [];
       }
-    };
-
-    fetchData();
+      setUpcomingEvents(events);
+      setLoading(false);
+    }, 1000);
   }, []);
 
   useEffect(() => {
@@ -222,34 +213,56 @@ const Home = () => {
       {/* Hero Section with Background Carousel */}
       <section className="pt-32 pb-20 px-6 relative overflow-hidden min-h-screen flex items-center">
         {/* Background Carousel */}
-<div className="absolute inset-0 z-0">
-  {carouselSlides.map((slide, index) => (
-    <div
-      key={index}
-      className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-        index === currentSlide 
-          ? 'opacity-100 pointer-events-auto' 
-          : 'opacity-0 pointer-events-none'
-      }`}
-      style={{ 
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${slide.bgImage})`,
-      }}
-    ></div>
-  ))}
-</div>
-
-        
+        <div className="absolute inset-0 z-0">
+          {carouselSlides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
+              style={{
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${slide.bgImage})`,
+              }}
+            ></div>
+          ))}
+        </div>
         <div className="max-w-6xl mx-auto relative z-10 text-center text-white">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Protecting Our
-            <br />
-            <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
-              Coastal Heritage
-            </span>
-          </h1>
-          
-          {/* Quotes Section - Synchronized with Carousel */}
-          <div className="max-w-3xl mx-auto mb-12 relative">
+          {isAuthenticated ? (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Welcome Back,
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  {currentUser?.name}
+                </span>
+              </h1>
+
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Ready to make a difference? Browse events, track your impact,
+                and connect with your environmental community.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Protect Our
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Coastal Heritage
+                </span>
+              </h1>
+
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Join the movement to keep our beaches clean and oceans healthy
+                through technology-powered community action.
+              </p>
+            </>
+          )}
+
+          {/* Quotes Section */}
+          <div className="max-w-3xl mx-auto mb-12">
             {quotes.map((quote, index) => (
               <div
                 key={index}
@@ -271,14 +284,41 @@ const Home = () => {
           </div>
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 transform hover:bg-cyan-50 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
-              <Users className="h-5 w-5 mr-2" />
-              Join as Volunteer
-            </button>
-            <button className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl border border-cyan-500/50 font-semibold flex items-center justify-center transition-all duration-300 transform hover:bg-cyan-700 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
-              <Calendar className="h-5 w-5 mr-2" />
-              Organize Event
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/events"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Browse Events
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  My Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Users className="h-5 w-5 mr-2" />
+                  Join as Volunteer
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -308,43 +348,56 @@ const Home = () => {
                 >
                   <div
                     className="h-48 bg-cover bg-center relative"
-                    style={{ backgroundImage: `url(${event.bannerUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'})` }}
+                    style={{
+                      backgroundImage: `url(${
+                        event.bannerUrl ||
+                        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"
+                      })`,
+                    }}
                   >
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">
-                          {formatDate(event.date)}
+                  <div className="p-6 flex flex-col justify-between min-h-[220px]">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-2 tracking-tight">
+                        {event.title}
+                      </h3>
+                      <p className="text-gray-600 mb-3 line-clamp-2 min-h-[2.5em]">
+                        {event.description}
+                      </p>
+                      <div className="flex items-center text-gray-600 mb-3">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span className="text-sm font-medium">
+                          {event.location}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center text-cyan-500">
+                          <Users className="h-4 w-4 mr-1" />
+                          <span className="text-sm font-medium">
+                            {event.participants} joined
+                          </span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600 mt-1">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {event.time}
+                        <div className="text-xs text-gray-500">
+                          by {event.organizer}
                         </div>
                       </div>
                     </div>
-                    
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="flex items-center text-gray-600 mb-3">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{event.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-cyan-500">
-                        <Users className="h-4 w-4 mr-1" />
-                        <span className="text-sm font-medium">{event.participants} joined</span>
-                      </div>
-                      <div className="text-xs text-gray-500">by {event.organizer}</div>
-                    </div>
-                    
-                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium cursor-pointer">
-                      Join Event
-                    </button>
+
+                    {isAuthenticated ? (
+                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
+                        Join Event
+                      </button>
+                    ) : (
+                      <Link
+                        to="/register"
+                        className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium text-center block"
+                      >
+                        Sign Up to Join
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
@@ -373,16 +426,16 @@ const Home = () => {
               </button>
             </Link>
 
-          <div className="text-center">
-            <Link 
-              to={isAuthenticated ? "/events" : "/register"}
-              className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
-            >
-              {isAuthenticated ? "View More Events" : "Join to See Events"}
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Link>
+            <div className="text-center">
+              <Link
+                to={isAuthenticated ? "/events" : "/register"}
+                className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
+              >
+                {isAuthenticated ? "View More Events" : "Join to See Events"}
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
+            </div>
           </div>
-        </div>
         </div>
       </section>
 
@@ -465,7 +518,6 @@ const Home = () => {
                       </p>
                     </div>
                   </div>
-                  
                   <div className="flex items-center mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star
@@ -474,7 +526,6 @@ const Home = () => {
                       />
                     ))}
                   </div>
-                  
                   <p className="text-gray-600 mb-6 leading-relaxed italic">
                     "{testimonial.text}"
                   </p>
@@ -509,7 +560,7 @@ const Home = () => {
                 Join our growing community of environmental champions and help
                 create cleaner, healthier coastlines for future generations.
               </p>
-              <Link 
+              <Link
                 to={isAuthenticated ? "/dashboard" : "/register"}
                 className="inline-block px-10 py-4 bg-white text-cyan-600 rounded-2xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl"
               >

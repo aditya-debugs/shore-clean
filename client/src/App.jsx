@@ -1,14 +1,13 @@
 import React from 'react';
-import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-
-// Import existing pages
+import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
 import Home from './pages/Home';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
+import CreateEvent from './pages/admin/CreateEvent';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Profile from './pages/Profile';
-
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 flex items-center justify-center">
@@ -24,16 +23,7 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
-import React from 'react';
-import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
-import Home from './pages/Home';
-import Events from './pages/Events';
-import EventDetails from './pages/EventDetails';
-import CreateEvent from './pages/admin/CreateEvent';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   React.useEffect(() => {

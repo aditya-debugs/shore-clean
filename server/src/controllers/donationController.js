@@ -68,4 +68,45 @@ const listDonations = async (req, res) => {
   }
 };
 
-module.exports = { createDonation, listDonations };
+const getStripeReceipt = async (req, res) => {
+  try {
+    const { session_id } = req.query;
+    if (!session_id) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    // Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (!session) {
+      return res.status(404).json({ error: 'Payment session not found' });
+    }
+
+    // Find the donation in our database
+    const donation = await Donation.findOne({ paymentProviderId: session_id });
+    if (!donation) {
+      return res.status(404).json({ error: 'Donation record not found' });
+    }
+
+    // Prepare receipt data
+    const receiptData = {
+      name: donation.name || session.customer_details?.name,
+      email: donation.email || session.customer_details?.email,
+      amount: (session.amount_total / 100).toFixed(2), // Convert from paise to INR
+      date: new Date(session.created * 1000).toLocaleDateString(),
+      status: session.payment_status === 'paid' ? 'completed' : session.payment_status
+    };
+
+    // If payment is successful but donation status is not updated, update it
+    if (session.payment_status === 'paid' && donation.status !== 'completed') {
+      donation.status = 'completed';
+      await donation.save();
+    }
+
+    res.json(receiptData);
+  } catch (err) {
+    console.error('Error retrieving receipt:', err);
+    res.status(500).json({ error: 'Failed to retrieve receipt details' });
+  }
+};
+
+module.exports = { createDonation, listDonations, getStripeReceipt };

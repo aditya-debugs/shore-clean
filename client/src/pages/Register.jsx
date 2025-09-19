@@ -9,7 +9,17 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'user',
+    image: null
+  });
+  const [imagePreview, setImagePreview] = useState(null);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    symbol: false
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -20,23 +30,33 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    
     // Validate required fields
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    
+    if (formData.image && !formData.image.type.startsWith('image/')) newErrors.image = 'Only image files are allowed';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-
     setLoading(true);
-    const result = await register(formData);
+    // Prepare form data for API (with image)
+    let submitData = { ...formData };
+    if (formData.image) {
+      const fd = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (key === 'image' && formData.image) {
+          fd.append('image', formData.image);
+        } else {
+          fd.append(key, formData[key]);
+        }
+      });
+      submitData = fd;
+    }
+    const result = await register(submitData);
     setLoading(false);
-    
     if (result.success) {
       navigate('/', { replace: true });
     } else {
@@ -45,11 +65,32 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
+    if (name === 'image') {
+      const file = files[0];
+      if (file && file.type.startsWith('image/')) {
+        setFormData(prev => ({ ...prev, image: file }));
+        setImagePreview(URL.createObjectURL(file));
+      } else {
+        setFormData(prev => ({ ...prev, image: null }));
+        setImagePreview(null);
+      }
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    // Password strength checker
+    if (name === 'password') {
+      setPasswordCriteria({
+        length: value.length >= 8,
+        uppercase: /[A-Z]/.test(value),
+        lowercase: /[a-z]/.test(value),
+        number: /[0-9]/.test(value),
+        symbol: /[^A-Za-z0-9]/.test(value)
+      });
+    }
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -59,9 +100,23 @@ const Register = () => {
     }
   };
 
+  // Password strength checker function
+  function checkPasswordStrength(password) {
+    if (!password) return '';
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (score >= 5) return 'Strong';
+    if (score >= 3) return 'Medium';
+    return 'Weak';
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-      <Navbar />
+      
       
       {/* Hero Background Section */}
       <div className="pt-32 pb-20 relative overflow-hidden">
@@ -175,19 +230,76 @@ const Register = () => {
                         ? 'border-red-300 bg-red-50' 
                         : 'border-gray-300 bg-white hover:border-gray-400'
                     }`}
-                    placeholder="Create a strong password (min 6 characters)"
+                    placeholder="Create a strong password (min 8 chars, upper/lower, number, symbol)"
                     disabled={loading}
                   />
                 </div>
+                <ul className="mt-3 space-y-1 text-sm">
+                  <li className={passwordCriteria.length ? 'text-green-600' : 'text-red-500'}>
+                    {passwordCriteria.length ? '✔' : '✖'} At least 8 characters
+                  </li>
+                  <li className={passwordCriteria.uppercase ? 'text-green-600' : 'text-red-500'}>
+                    {passwordCriteria.uppercase ? '✔' : '✖'} Contains uppercase letter
+                  </li>
+                  <li className={passwordCriteria.lowercase ? 'text-green-600' : 'text-red-500'}>
+                    {passwordCriteria.lowercase ? '✔' : '✖'} Contains lowercase letter
+                  </li>
+                  <li className={passwordCriteria.number ? 'text-green-600' : 'text-red-500'}>
+                    {passwordCriteria.number ? '✔' : '✖'} Contains number
+                  </li>
+                  <li className={passwordCriteria.symbol ? 'text-green-600' : 'text-red-500'}>
+                    {passwordCriteria.symbol ? '✔' : '✖'} Contains symbol
+                  </li>
+                </ul>
                 {errors.password && (
                   <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 bg-white"
+                  disabled={loading}
+                >
+                  <option value="org">Organizer</option>
+                  <option value="user">Volunteer</option>
+                </select>
+              </div>
+
+              {/* Profile Image Upload */}
+              <div>
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Image (optional)
+                </label>
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 bg-white"
+                  disabled={loading}
+                />
+                {imagePreview && (
+                  <div className="mt-3 flex justify-center">
+                    <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-full object-cover border border-gray-300 shadow" />
+                  </div>
+                )}
+                {errors.image && (
+                  <p className="mt-2 text-sm text-red-600">{errors.image}</p>
                 )}
               </div>
 
               {/* Register Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !Object.values(passwordCriteria).every(Boolean)}
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-3 px-4 rounded-xl hover:from-cyan-600 hover:to-blue-600 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-300 font-semibold flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -220,7 +332,7 @@ const Register = () => {
         </div>
       </div>
 
-      <Footer />
+      
     </div>
   );
 };

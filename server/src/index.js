@@ -11,7 +11,7 @@ const volunteerRoutes = require('./routes/volunteerRoutes');
 const donationRoutes = require('./routes/donationRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
-
+const commentRoutes = require("./routes/commentRoutes.js");
 
 const app = express();
 connectDB();
@@ -38,6 +38,7 @@ app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/comments", commentRoutes);
 
 
 // example protected route

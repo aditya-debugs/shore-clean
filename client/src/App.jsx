@@ -1,13 +1,15 @@
 import React from 'react';
-import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-
-// Import existing pages
+import { Route, Routes, BrowserRouter, useLocation, Link } from 'react-router-dom';
 import Home from './pages/Home';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
+import CreateEvent from './pages/admin/CreateEvent';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
 import Profile from './pages/Profile';
+import Donations from './pages/Donations';  // ✅ import Donations page
 
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
@@ -24,16 +26,7 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
-import React from 'react';
-import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
-import Home from './pages/Home';
-import Events from './pages/Events';
-import EventDetails from './pages/EventDetails';
-import CreateEvent from './pages/admin/CreateEvent';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   React.useEffect(() => {
@@ -41,8 +34,6 @@ function ScrollToTop() {
   }, [pathname]);
   return null;
 }
-
-
 
 function App() {
   return (
@@ -55,6 +46,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/create-event" element={<CreateEvent />} />
+
           {/* Protected Routes */}
           <Route path="/events" element={
             <PrivateRoute>
@@ -71,11 +63,14 @@ function App() {
               <ComingSoon pageName="Dashboard" />
             </PrivateRoute>
           } />
+
+          {/* ✅ Replace ComingSoon with Donations page */}
           <Route path="/donations" element={
             <PrivateRoute>
-              <ComingSoon pageName="Donations" />
+              <Donations />
             </PrivateRoute>
           } />
+
           <Route path="/certificates" element={
             <PrivateRoute>
               <ComingSoon pageName="Certificates" />
@@ -88,6 +83,7 @@ function App() {
           } />
           <Route path="/impact" element={<ComingSoon pageName="Impact" />} />
           <Route path="/about" element={<ComingSoon pageName="About" />} />
+
           {/* 404 Route */}
           <Route path="*" element={
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">

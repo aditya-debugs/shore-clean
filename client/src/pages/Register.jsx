@@ -10,10 +10,8 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user',
-    image: null
+    role: 'user'
   });
-  const [imagePreview, setImagePreview] = useState(null);
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
     uppercase: false,
@@ -36,26 +34,12 @@ const Register = () => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (formData.image && !formData.image.type.startsWith('image/')) newErrors.image = 'Only image files are allowed';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
     setLoading(true);
-    // Prepare form data for API (with image)
-    let submitData = { ...formData };
-    if (formData.image) {
-      const fd = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'image' && formData.image) {
-          fd.append('image', formData.image);
-        } else {
-          fd.append(key, formData[key]);
-        }
-      });
-      submitData = fd;
-    }
-    const result = await register(submitData);
+    const result = await register(formData);
     setLoading(false);
     if (result.success) {
       navigate('/', { replace: true });
@@ -65,18 +49,7 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'image') {
-      const file = files[0];
-      if (file && file.type.startsWith('image/')) {
-        setFormData(prev => ({ ...prev, image: file }));
-        setImagePreview(URL.createObjectURL(file));
-      } else {
-        setFormData(prev => ({ ...prev, image: null }));
-        setImagePreview(null);
-      }
-      return;
-    }
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -272,29 +245,7 @@ const Register = () => {
                 </select>
               </div>
 
-              {/* Profile Image Upload */}
-              <div>
-                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Image (optional)
-                </label>
-                <input
-                  type="file"
-                  id="image"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 bg-white"
-                  disabled={loading}
-                />
-                {imagePreview && (
-                  <div className="mt-3 flex justify-center">
-                    <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-full object-cover border border-gray-300 shadow" />
-                  </div>
-                )}
-                {errors.image && (
-                  <p className="mt-2 text-sm text-red-600">{errors.image}</p>
-                )}
-              </div>
+              
 
               {/* Register Button */}
               <button

@@ -1,7 +1,9 @@
 // App.jsx - Updated main app component with routing to chat
 import { useState } from "react";
-import ChatCommunity from "./pages/ChatCommunity";
-
+import ChatCommunity from "./pages/ChatCommunity";import { Route, Routes, BrowserRouter } from 'react-router-dom';
+import Home from './pages/Home'
+import Events from './pages/Events'
+import EventDetails from './pages/EventDetails'
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
 
@@ -100,6 +102,7 @@ function App() {
   };
 
   return (
+<<<<<<< HEAD
     <div className="App">
       {currentPage === "chat" && (
         <div className="fixed top-4 left-4 z-50">
@@ -130,3 +133,16 @@ function App() {
 }
 
 export default App;
+=======
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/events/:id" element={<EventDetails />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App
+>>>>>>> b03850d3bac081d658221a295117b072d821be81

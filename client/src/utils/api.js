@@ -2,16 +2,25 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
-  withCredentials: true, // Important for cookies
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.token) {
+          config.headers.Authorization = `Bearer ${user.token}`;
+        }
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+      }
     }
     return config;
   },
@@ -20,97 +29,14 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor for error logging
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const response = await refreshAccessToken();
-        const newToken = response.accessToken;
-        localStorage.setItem('accessToken', newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
-
+  (error) => {
+    console.log('API Error Response:', error.response?.data);
     return Promise.reject(error);
   }
 );
-
-// Auth API functions
-export const login = async (email, password) => {
-  try {
-    const response = await api.post('/auth/login', { email, password });
-    const { accessToken } = response.data;
-    
-    // Store access token in localStorage
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-    }
-    
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const register = async (userData) => {
-  try {
-    const response = await api.post('/auth/register', userData);
-    const { accessToken } = response.data;
-    
-    // Store access token in localStorage
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-    }
-    
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const logout = async () => {
-  try {
-    await api.post('/auth/logout');
-    localStorage.removeItem('accessToken');
-  } catch (error) {
-    // Even if logout fails on server, remove local token
-    localStorage.removeItem('accessToken');
-    throw error;
-  }
-};
-
-export const refreshAccessToken = async () => {
-  try {
-    const response = await api.get('/auth/refresh-token');
-    const { accessToken } = response.data;
-    
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-    }
-    
-    return response.data;
-  } catch (error) {
-    localStorage.removeItem('accessToken');
-    // Don't throw error if server is not running, just return null
-    if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-      console.log('Server not available, continuing without authentication');
-      return null;
-    }
-    throw error;
-  }
-};
 
 // Event API functions
 export const getEvents = async (params = {}) => {

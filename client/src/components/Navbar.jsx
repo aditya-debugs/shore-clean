@@ -9,19 +9,8 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
   
-  // Safely get auth state with fallbacks
-  let isAuthenticated = false;
-  let user = null;
-  let logout = () => {};
-  
-  try {
-    const authState = useAuth();
-    isAuthenticated = authState?.isAuthenticated || false;
-    user = authState?.user || null;
-    logout = authState?.logout || (() => {});
-  } catch (error) {
-    console.log('Auth not available:', error.message);
-  }
+  const { currentUser, logout } = useAuth();
+  const isAuthenticated = !!currentUser;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,7 +69,7 @@ const Navbar = () => {
                     <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-gray-700 font-medium">{user?.name || 'User'}</span>
+                    <span className="text-gray-700 font-medium">{currentUser?.name || 'User'}</span>
                   </button>
                   
                   {showUserMenu && (
@@ -102,10 +91,10 @@ const Navbar = () => {
                         Settings
                       </Link>
                       <button
-                        onClick={async () => {
-                          await logout();
+                        onClick={() => {
+                          logout();
                           setShowUserMenu(false);
-                          navigate('/login', { replace: true });
+                          navigate('/', { replace: true });
                         }}
                         className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
                       >
@@ -132,7 +121,7 @@ const Navbar = () => {
                   </Link>
                 ))}
                 <Link 
-                  to="/signin"
+                  to="/login"
                   className="ml-4 px-4 py-2 text-gray-700 hover:text-cyan-600 transition-colors font-medium"
                 >
                   Sign In
@@ -178,10 +167,10 @@ const Navbar = () => {
                     </Link>
                   ))}
                   <button 
-                    onClick={async () => {
-                      await logout();
+                    onClick={() => {
+                      logout();
                       setIsMenuOpen(false);
-                      navigate('/login', { replace: true });
+                      navigate('/', { replace: true });
                     }}
                     className="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-300 mx-4 text-left"
                   >
@@ -204,7 +193,7 @@ const Navbar = () => {
                     </Link>
                   ))}
                   <Link 
-                    to="/signin"
+                    to="/login"
                     className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >

@@ -15,17 +15,8 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [features, setFeatures] = useState([]);
   
-  // Safely get auth state with fallbacks
-  let isAuthenticated = false;
-  let user = null;
-  
-  try {
-    const authState = useAuth();
-    isAuthenticated = authState?.isAuthenticated || false;
-    user = authState?.user || null;
-  } catch (error) {
-    console.log('Auth not available:', error.message);
-  }
+  const { currentUser } = useAuth();
+  const isAuthenticated = !!currentUser;
 
   // Fetch data from API (to be implemented)
   useEffect(() => {
@@ -193,17 +184,35 @@ const Home = () => {
         </div>
         
         <div className="max-w-6xl mx-auto relative z-10 text-center text-white">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Protect Our
-            <br />
-            <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
-              Coastal Heritage
-            </span>
-          </h1>
-          
-          <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
-            Join the movement to keep our beaches clean and oceans healthy through technology-powered community action.
-          </p>
+          {isAuthenticated ? (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Welcome Back,
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  {currentUser?.name}
+                </span>
+              </h1>
+              
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Ready to make a difference? Browse events, track your impact, and connect with your environmental community.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Protect Our
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Coastal Heritage
+                </span>
+              </h1>
+              
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Join the movement to keep our beaches clean and oceans healthy through technology-powered community action.
+              </p>
+            </>
+          )}
           
           {/* Quotes Section */}
           <div className="max-w-3xl mx-auto mb-12">
@@ -250,7 +259,7 @@ const Home = () => {
                   Join as Volunteer
                 </Link>
                 <Link 
-                  to="/signin"
+                  to="/login"
                   className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
                 >
                   <LogIn className="h-5 w-5 mr-2" />

@@ -1,133 +1,90 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin, register as apiRegister, logout as apiLogout } from '../utils/api';
+import api from '../utils/api';
 
-// Create AuthContext
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
-// Custom hook to use auth context
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    return {
-      user: null,
-      isAuthenticated: false,
-      loading: false,
-      error: null,
-      login: async () => ({ success: false, error: 'Auth not initialized' }),
-      register: async () => ({ success: false, error: 'Auth not initialized' }),
-      logout: () => {},
-      clearError: () => {}
-    };
-  }
-  return context;
+  return useContext(AuthContext);
 };
 
-// AuthProvider component
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Check for existing token on app load
   useEffect(() => {
-    const checkAuth = () => {
+    // Load user from localStorage on app start
+    const userData = localStorage.getItem('user');
+    if (userData) {
       try {
-        const token = localStorage.getItem('accessToken');
-        const userData = localStorage.getItem('user');
-        
-        if (token && userData) {
-          setUser(JSON.parse(userData));
-        }
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
       } catch (error) {
-        console.error('Error checking auth:', error);
-        localStorage.removeItem('accessToken');
+        console.error('Error parsing user data from localStorage:', error);
         localStorage.removeItem('user');
-      } finally {
-        setLoading(false);
       }
-    };
-
-    checkAuth();
+    }
+    setLoading(false);
   }, []);
 
-  // Login function
-  const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
-    
+  const login = async (userData) => {
     try {
-      const response = await apiLogin(email, password);
+      const response = await api.post('/auth/login', userData);
+      const { user, accessToken } = response.data;
       
-      // Store token and user data
-      localStorage.setItem('accessToken', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      const userWithToken = {
+        ...user,
+        token: accessToken
+      };
+
+      // Save to localStorage and state
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      setCurrentUser(userWithToken);
       
-      setUser(response.user);
-      setLoading(false);
-      
-      return { success: true, data: response };
+      return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      setError(errorMessage);
-      setLoading(false);
-      return { success: false, error: errorMessage };
+      console.error('Login error:', error.response?.data);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Login failed'
+      };
     }
   };
 
-  // Register function
   const register = async (userData) => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      const response = await apiRegister(userData);
+      const response = await api.post('/auth/register', userData);
+      const { user, accessToken } = response.data;
       
-      // Auto-login after successful registration
-      if (response.token && response.user) {
-        localStorage.setItem('accessToken', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        setUser(response.user);
-      }
+      const userWithToken = {
+        ...user,
+        token: accessToken
+      };
+
+      // Save to localStorage and state
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      setCurrentUser(userWithToken);
       
-      setLoading(false);
-      return { success: true, data: response };
+      return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      setError(errorMessage);
-      setLoading(false);
-      return { success: false, error: errorMessage };
+      console.error('Register error:', error.response?.data);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Registration failed'
+      };
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await apiLogout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear local storage and state
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      setUser(null);
-      setError(null);
-    }
-  };
-
-  // Clear error function
-  const clearError = () => {
-    setError(null);
+  const logout = () => {
+    localStorage.removeItem('user');
+    setCurrentUser(null);
   };
 
   const value = {
-    user,
-    isAuthenticated: !!user,
-    loading,
-    error,
+    currentUser,
     login,
     register,
     logout,
-    clearError
+    loading
   };
 
   return (

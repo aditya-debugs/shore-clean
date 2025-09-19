@@ -1,12 +1,12 @@
 import React from 'react';
 import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
 
 // Import existing pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Signin from './pages/Signin';
 
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
@@ -24,27 +24,7 @@ const ComingSoon = ({ pageName }) => (
   </div>
 );
 
-// Protected Route component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return children;
-};
+
 
 function App() {
   return (
@@ -52,32 +32,35 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/signin" element={<Signin />} />
-          
-          {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } />
           
           {/* Protected Routes */}
           <Route path="/events" element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <ComingSoon pageName="Events" />
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <ComingSoon pageName="Dashboard" />
-            </ProtectedRoute>
+            </PrivateRoute>
+          } />
+          <Route path="/donations" element={
+            <PrivateRoute>
+              <ComingSoon pageName="Donations" />
+            </PrivateRoute>
+          } />
+          <Route path="/certificates" element={
+            <PrivateRoute>
+              <ComingSoon pageName="Certificates" />
+            </PrivateRoute>
           } />
           <Route path="/profile" element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <ComingSoon pageName="Profile" />
-            </ProtectedRoute>
+            </PrivateRoute>
           } />
           <Route path="/impact" element={<ComingSoon pageName="Impact" />} />
           <Route path="/about" element={<ComingSoon pageName="About" />} />

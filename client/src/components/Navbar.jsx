@@ -59,7 +59,13 @@ const Navbar = () => {
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
                   </Link>
                 ))}
-                
+                {/* Donate Button (Secure Access) */}
+                <button
+                  onClick={() => navigate('/donations', { state: { fromNavbar: true } })}
+                  className="ml-4 px-6 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
+                >
+                  Donate
+                </button>
                 {/* User Menu */}
                 <div className="relative ml-4">
                   <button

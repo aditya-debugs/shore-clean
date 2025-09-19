@@ -1,8 +1,8 @@
-import Registration from "../models/Registration.js";
-import { generateQR } from "../utils/qrGenerator.js";
+const Registration = require("../models/Registration.js");
+const { generateQR } = ("../utils/qrGenerator.js");
 
 // Register user for event & generate QR
-export const registerForEvent = async (req, res) => {
+const registerForEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const userId = req.user.id; // from JWT auth middleware
@@ -30,7 +30,7 @@ export const registerForEvent = async (req, res) => {
 };
 
 // Check-in
-export const checkIn = async (req, res) => {
+const checkIn = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { userId } = req.body;
@@ -48,7 +48,7 @@ export const checkIn = async (req, res) => {
 };
 
 // Check-out
-export const checkOut = async (req, res) => {
+const checkOut = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { userId } = req.body;
@@ -63,4 +63,10 @@ export const checkOut = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+module.exports = {
+  registerForEvent,
+  checkIn,
+  checkOut,
 };

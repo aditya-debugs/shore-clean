@@ -1,18 +1,13 @@
 // server/src/index.js
-require('dotenv').config({ path: __dirname + '/.env' });
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const connectDB = require('./config/db');
+require("dotenv").config({ path: __dirname + "/.env" });
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const connectDB = require("./config/db");
+const { initializeSocketHandlers } = require("./utils/socketHandler");
 
-const authRoutes = require('./routes/authRoutes');
-const eventRoutes = require('./routes/eventRoutes');
-const volunteerRoutes = require('./routes/volunteerRoutes');
-const donationRoutes = require('./routes/donationRoutes');
-const certificateRoutes = require('./routes/certificateRoutes');
-const registrationRoutes = require('./routes/registrationRoutes');
-
-// Import routes
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const volunteerRoutes = require("./routes/volunteerRoutes");
@@ -33,6 +28,7 @@ const io = new Server(server, {
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:5175",
+      "http://localhost:5176",
     ],
     methods: ["GET", "POST"],
     credentials: true,
@@ -47,16 +43,18 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS: allow client to send cookies to server
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174', 
-    'http://localhost:5175',
-    'http://localhost:5176',
-    process.env.CLIENT_URL || 'http://localhost:3000'
-  ],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "http://localhost:5176",
+      process.env.CLIENT_URL || "http://localhost:3000",
+    ],
+    credentials: true,
+  })
+);
 
 // Mount routes
 app.use("/api/auth", authRoutes);

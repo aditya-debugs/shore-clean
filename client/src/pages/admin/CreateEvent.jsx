@@ -9,7 +9,6 @@ const initialState = {
 	startDate: "",
 	endDate: "",
 	capacity: "",
-	organizer: "",
 	bannerUrl: "",
 	tags: "",
 };
@@ -25,6 +24,7 @@ const CreateEvent = () => {
 	const [isEdit, setIsEdit] = useState(false);
 	const [eventId, setEventId] = useState(null);
 
+
 	useEffect(() => {
 		const params = new URLSearchParams(location.search);
 		const editId = params.get("edit");
@@ -32,24 +32,25 @@ const CreateEvent = () => {
 			setIsEdit(true);
 			setEventId(editId);
 			setLoading(true);
-			const events = JSON.parse(localStorage.getItem("events")) || [];
-			const data = events.find(ev => ev._id === editId);
-			if (data) {
-				setForm({
-					title: data.title || "",
-					description: data.description || "",
-					location: data.location || "",
-					startDate: data.startDate || "",
-					endDate: data.endDate || "",
-					capacity: data.capacity ? String(data.capacity) : "",
-					organizer: data.organizer || "",
-					bannerUrl: data.bannerUrl || "",
-					tags: Array.isArray(data.tags) ? data.tags.join(",") : data.tags || "",
+			fetch(`/api/events/${editId}`)
+				.then(res => res.json())
+				.then(data => {
+					setForm({
+						title: data.title || "",
+						description: data.description || "",
+						location: data.location || "",
+						startDate: data.startDate ? new Date(data.startDate).toISOString().slice(0,16) : "",
+						endDate: data.endDate ? new Date(data.endDate).toISOString().slice(0,16) : "",
+						capacity: data.capacity ? String(data.capacity) : "",
+						bannerUrl: data.bannerUrl || "",
+						tags: Array.isArray(data.tags) ? data.tags.join(",") : data.tags || "",
+					});
+					setLoading(false);
+				})
+				.catch(() => {
+					setError("Event not found for editing.");
+					setLoading(false);
 				});
-			} else {
-				setError("Event not found for editing.");
-			}
-			setLoading(false);
 		}
 	}, [location.search]);
 
@@ -58,32 +59,62 @@ const CreateEvent = () => {
 		setForm((prev) => ({ ...prev, [name]: value }));
 	};
 
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
 
+		// Validate required fields before submit
+		if (!form.title || !form.startDate) {
+			setError("Title and Start Date are required.");
+			setLoading(false);
+			return;
+		}
 		try {
 			const eventData = {
 				...form,
+				startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
 				tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
 				capacity: form.capacity ? parseInt(form.capacity) : undefined,
-				_id: isEdit && eventId ? eventId : Date.now().toString(),
 			};
-
-			let events = JSON.parse(localStorage.getItem("events")) || [];
+			const token = localStorage.getItem("token");
+			let response;
 			if (isEdit && eventId) {
-				events = events.map(ev => ev._id === eventId ? eventData : ev);
+				response = await fetch(`/api/events/${eventId}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${token}`,
+					},
+					body: JSON.stringify(eventData),
+				});
 			} else {
-				events.push(eventData);
+				response = await fetch(`/api/events`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${token}`,
+					},
+					body: JSON.stringify(eventData),
+				});
 			}
-			localStorage.setItem("events", JSON.stringify(events));
-
+			const result = await response.json();
+			if (!response.ok) {
+				if (result.details) {
+					// Show backend validation errors
+					setError(Object.values(result.details).map(e => e.message).join("; "));
+				} else {
+					setError(result.message || (isEdit ? "Error updating event" : "Error creating event"));
+				}
+				setLoading(false);
+				return;
+			}
 			// 🔹 Trigger email notification only for new events
 			if (!isEdit) {
 				await notifyUsers(eventData.title);
 			}
-
 			navigate("/events");
 		} catch (err) {
 			setError(isEdit ? "Error updating event" : "Error creating event");
@@ -221,18 +252,6 @@ const CreateEvent = () => {
 								min="1"
 								className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
 								placeholder="Max Attendees"
-							/>
-						</div>
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">Organizer Name</label>
-							<input
-								type="text"
-								name="organizer"
-								value={form.organizer}
-								onChange={handleChange}
-								required
-								className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
-								placeholder="Organizer Name"
 							/>
 						</div>
 					</div>

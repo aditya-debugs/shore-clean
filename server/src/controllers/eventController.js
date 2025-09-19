@@ -5,12 +5,15 @@ const Volunteer = require('../models/Volunteer');
 const createEvent = async (req, res) => {
   try {
     const data = req.body;
-    data.organizer = req.user.id;
+  data.organizer = req.user.userId;
     const event = await Event.create(data);
     res.status(201).json(event);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Event creation error:', err.message, '\nRequest body:', req.body);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Validation error', details: err.errors });
+    }
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

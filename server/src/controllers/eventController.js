@@ -22,7 +22,7 @@ const updateEvent = async (req, res) => {
     const { id } = req.params;
     const event = await Event.findById(id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (event.organizer.toString() !== req.user.id && req.user.role !== 'admin')
+    if (event.organizer.toString() !== req.user.userId && req.user.role !== 'admin')
       return res.status(403).json({ message: 'Forbidden' });
 
     Object.assign(event, req.body);

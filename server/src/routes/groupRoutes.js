@@ -8,14 +8,27 @@ const {
   joinGroup,
   leaveGroup,
   getGroupMessages,
+  createDefaultGroups,
 } = require("../controllers/groupController");
 const { protect } = require("../middlewares/authMiddleware");
 
-// Protect all group routes - TEMPORARILY DISABLED FOR TESTING
-// router.use(protect);
-
-// Organization group routes
+// Organization group routes (publicly accessible for demo)
 router.get("/:orgId", getOrgGroups); // Get all groups for an organization
+
+// Development route to seed demo groups (remove in production)
+router.post("/:orgId/seed", async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const groups = await createDefaultGroups(orgId, orgId); // Using orgId as createdBy for demo
+    res.json({ success: true, data: groups, message: "Demo groups created" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Protect other routes that require authentication
+router.use(protect);
+
 router.post("/:orgId", createGroup); // Create a new group
 
 // Individual group routes

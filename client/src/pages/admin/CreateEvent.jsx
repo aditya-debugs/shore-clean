@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import emailjs from "@emailjs/browser";
 
 const initialState = {
 	title: "",
@@ -13,6 +13,8 @@ const initialState = {
 	bannerUrl: "",
 	tags: "",
 };
+
+const BACKEND_URL = "http://localhost:8001/ai"; // FastAPI AI server
 
 const CreateEvent = () => {
 	const [form, setForm] = useState(initialState);
@@ -30,7 +32,6 @@ const CreateEvent = () => {
 			setIsEdit(true);
 			setEventId(editId);
 			setLoading(true);
-			// Fetch event data from localStorage
 			const events = JSON.parse(localStorage.getItem("events")) || [];
 			const data = events.find(ev => ev._id === editId);
 			if (data) {
@@ -52,16 +53,16 @@ const CreateEvent = () => {
 		}
 	}, [location.search]);
 
-	// Properly define handleChange function
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		setForm((prev) => ({ ...prev, [name]: value }));
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
+
 		try {
 			const eventData = {
 				...form,
@@ -69,6 +70,7 @@ const CreateEvent = () => {
 				capacity: form.capacity ? parseInt(form.capacity) : undefined,
 				_id: isEdit && eventId ? eventId : Date.now().toString(),
 			};
+
 			let events = JSON.parse(localStorage.getItem("events")) || [];
 			if (isEdit && eventId) {
 				events = events.map(ev => ev._id === eventId ? eventData : ev);
@@ -76,19 +78,71 @@ const CreateEvent = () => {
 				events.push(eventData);
 			}
 			localStorage.setItem("events", JSON.stringify(events));
+
+			// 🔹 Trigger email notification only for new events
+			if (!isEdit) {
+				await notifyUsers(eventData.title);
+			}
+
 			navigate("/events");
 		} catch (err) {
 			setError(isEdit ? "Error updating event" : "Error creating event");
+			console.error(err);
 		} finally {
 			setLoading(false);
 		}
 	};
 
+	// Function to generate description & flyer, then send email
+	const notifyUsers = async (eventQuery) => {
+		try {
+			// 1️⃣ Generate description
+			const descRes = await fetch(`${BACKEND_URL}/description`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ event_query: eventQuery }),
+			});
+			const descData = await descRes.json();
+			const description = descData.description;
+
+			// 2️⃣ Generate flyer
+			const flyerRes = await fetch(`${BACKEND_URL}/flyer`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ event_query: eventQuery }),
+			});
+			const flyerData = await flyerRes.json();
+			const flyerUrl = flyerData.flyer_url || flyerData.image_path;
+
+			// 3️⃣ Send Email via EmailJS
+			const templateParams = {
+				to_email: "recipient@example.com", // replace with actual recipient
+				event_description: description,
+				flyer_url: flyerUrl,
+			};
+
+			await emailjs.send(
+				import.meta.env.VITE_EMAILJS_SERVICE_ID,
+				import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+				templateParams,
+				import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+			);
+
+			console.log("Notification email sent successfully ✅");
+		} catch (err) {
+			console.error("Failed to notify users ❌", err);
+		}
+	};
+
 	return (
 		<div className="max-w-2xl mx-auto py-12 px-4 md:px-0 animate-fade-in">
-			<h1 className="text-3xl md:text-4xl font-bold text-cyan-700 mb-8 text-center">{isEdit ? "Update Event" : "Create New Event"}</h1>
+			<h1 className="text-3xl md:text-4xl font-bold text-cyan-700 mb-8 text-center">
+				{isEdit ? "Update Event" : "Create New Event"}
+			</h1>
+
 			<form className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100" onSubmit={handleSubmit}>
 				<div className="grid grid-cols-1 gap-6">
+					{/* Title */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
 						<input
@@ -101,6 +155,8 @@ const CreateEvent = () => {
 							placeholder="Event Title"
 						/>
 					</div>
+
+					{/* Description */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
 						<textarea
@@ -113,6 +169,8 @@ const CreateEvent = () => {
 							placeholder="Event Description"
 						/>
 					</div>
+
+					{/* Location */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
 						<input
@@ -125,6 +183,8 @@ const CreateEvent = () => {
 							placeholder="Event Location"
 						/>
 					</div>
+
+					{/* Start & End Dates */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
@@ -148,6 +208,8 @@ const CreateEvent = () => {
 							/>
 						</div>
 					</div>
+
+					{/* Capacity & Organizer */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
@@ -174,6 +236,8 @@ const CreateEvent = () => {
 							/>
 						</div>
 					</div>
+
+					{/* Banner URL */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Banner Image URL</label>
 						<input
@@ -185,6 +249,8 @@ const CreateEvent = () => {
 							placeholder="https://..."
 						/>
 					</div>
+
+					{/* Tags */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
 						<input
@@ -197,7 +263,9 @@ const CreateEvent = () => {
 						/>
 					</div>
 				</div>
+
 				{error && <div className="text-red-600 mt-4 text-center">{error}</div>}
+
 				<button
 					type="submit"
 					disabled={loading}

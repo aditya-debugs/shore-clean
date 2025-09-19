@@ -1,9 +1,9 @@
 // server/src/index.js
-require("dotenv").config({ path: __dirname + "/.env" });
-const express = require("express");
+require('dotenv').config({ path: __dirname + '/.env' });
+const express = require('express');
+const cookieParser = require('cookie-parser');
 const http = require("http");
 const { Server } = require("socket.io");
-const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const { initializeSocketHandlers } = require("./utils/socketHandler");
@@ -17,6 +17,7 @@ const registrationRoutes = require("./routes/registrationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const groupRoutes = require("./routes/groupRoutes");
 const webhookRoutes = require("./routes/webhookRoutes");
+const commentRoutes = require("./routes/commentRoutes.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -67,6 +68,7 @@ app.use("/api/volunteers", volunteerRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/comments", commentRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/groups", groupRoutes);
 

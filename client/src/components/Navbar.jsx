@@ -66,9 +66,7 @@ const Navbar = () => {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-cyan-50 transition-all duration-300"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
+                      <User className="w-8 h-8 text-cyan-600" />
                     <span className="text-gray-700 font-medium">{currentUser?.name || 'User'}</span>
                   </button>
                   
@@ -82,14 +80,7 @@ const Navbar = () => {
                         <User className="h-4 w-4 mr-3" />
                         Profile
                       </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-cyan-50 transition-colors"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <Settings className="h-4 w-4 mr-3" />
-                        Settings
-                      </Link>
+                      
                       <button
                         onClick={() => {
                           logout();

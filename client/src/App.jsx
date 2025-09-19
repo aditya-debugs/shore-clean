@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -24,16 +25,16 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
-import React from 'react';
-import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
-import Home from './pages/Home';
+  // import React from 'react';
+  // import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
+// import Home from './pages/Home';
 import Events from './pages/Events';
 import EventDetails from './pages/EventDetails';
 import CreateEvent from './pages/admin/CreateEvent';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
+// import Login from './pages/Login';
+// import Register from './pages/Register';
+// import { AuthProvider } from './context/AuthContext';
+// import PrivateRoute from './components/PrivateRoute';
 function ScrollToTop() {
   const { pathname } = useLocation();
   React.useEffect(() => {

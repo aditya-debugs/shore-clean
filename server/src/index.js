@@ -16,9 +16,13 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const webhookRoutes = require("./routes/webhookRoutes");
 
 const app = express();
 const server = http.createServer(app);
+
+// This must be before the express.json() middleware for Stripe webhooks
+app.use('/api/webhooks', webhookRoutes);
 
 // Initialize Socket.io with CORS settings
 const io = new Server(server, {

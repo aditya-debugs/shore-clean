@@ -122,7 +122,7 @@ const Profile = () => {
 
   return (
     <>
-      <Navbar />
+      
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-cyan-900 bg-opacity-60 z-50 transition-all duration-300">
           <div className="bg-gradient-to-br from-cyan-50 to-blue-100 border-2 border-cyan-400 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center animate-fade-in">
@@ -296,7 +296,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      <Footer />
+      
     </>
   );
 };

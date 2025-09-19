@@ -22,32 +22,16 @@ const Events = () => {
   }, []);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(`${EVENTS_API}?page=${page}&limit=${limit}`);
-        if (!res.ok) {
-          let msg = "Failed to fetch events";
-          try {
-            const errData = await res.json();
-            if (errData.message) msg = errData.message;
-          } catch (e) {}
-          throw new Error(msg);
-        }
-        const data = await res.json();
-        setEvents(data.events);
-        setTotalPages(Math.ceil((data.total || data.events.length) / limit));
-      } catch (err) {
-        if (err.message.includes("Failed to fetch")) {
-          setError("Could not connect to the events API. Is your backend running at /api/events?");
-        } else {
-          setError(err.message || "Unable to load events. Please try again later.");
-        }
-      }
-      setLoading(false);
-    };
-    fetchEvents();
+    setLoading(true);
+    setError("");
+    // Read events from localStorage
+    let allEvents = JSON.parse(localStorage.getItem("events")) || [];
+    // Simple pagination
+    const startIdx = (page - 1) * limit;
+    const pagedEvents = allEvents.slice(startIdx, startIdx + limit);
+    setEvents(pagedEvents);
+    setTotalPages(Math.max(1, Math.ceil(allEvents.length / limit)));
+    setLoading(false);
   }, [page, limit]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
@@ -106,43 +90,52 @@ const Events = () => {
           {!loading && !error && events.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {events.map((event, idx) => (
-                <Link
-                  to={`/events/${event._id}`}
-                  key={event._id}
-                  className="bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in block"
-                  style={{ animationDelay: `${idx * 80}ms` }}
-                >
-                  <div
-                    className="h-48 bg-cover bg-center relative"
-                    style={{ backgroundImage: `url(${event.bannerUrl || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"})` }}
+                <div key={event._id} className="relative">
+                  <Link
+                    to={`/events/${event._id}`}
+                    className="bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in block"
+                    style={{ animationDelay: `${idx * 80}ms` }}
                   >
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
-                    <div className="absolute top-2 right-2 bg-white/80 rounded-full px-3 py-1 text-xs font-semibold text-cyan-600 shadow-md backdrop-blur">
-                      {new Date(event.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </div>
-                  </div>
-                  <div className="p-6 flex flex-col justify-between min-h-[260px]">
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-800 mb-2 tracking-tight">
-                        {event.title}
-                      </h3>
-                      <p className="text-gray-600 mb-3 line-clamp-2 min-h-[2.5em]">{event.description}</p>
-                      <div className="flex items-center text-gray-600 mb-3">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="text-sm font-medium">{event.location}</span>
+                    <div
+                      className="h-48 bg-cover bg-center relative"
+                      style={{ backgroundImage: `url(${event.bannerUrl || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"})` }}
+                    >
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
+                      <div className="absolute top-2 right-2 bg-white/80 rounded-full px-3 py-1 text-xs font-semibold text-cyan-600 shadow-md backdrop-blur">
+                        {new Date(event.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center text-cyan-500">
-                          <Users className="h-4 w-4 mr-1" />
-                          <span className="text-sm font-medium">{event.attendees?.length || 0} joined</span>
+                    <div className="p-6 flex flex-col justify-between min-h-[260px]">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2 tracking-tight">
+                          {event.title}
+                        </h3>
+                        <p className="text-gray-600 mb-3 line-clamp-2 min-h-[2.5em]">{event.description}</p>
+                        <div className="flex items-center text-gray-600 mb-3">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-medium">{event.location}</span>
                         </div>
-                        <div className="text-xs text-gray-500">by {event.organizer?.name || "Organizer"}</div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center text-cyan-500">
+                            <Users className="h-4 w-4 mr-1" />
+                            <span className="text-sm font-medium">{event.attendees?.length || 0} joined</span>
+                          </div>
+                          <div className="text-xs text-gray-500">by {event.organizer?.name || "Organizer"}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <Link
+                    to={`/admin/create-event?edit=${event._id}`}
+                    className="absolute top-4 left-4 z-10"
+                  >
+                    <button className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold shadow hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 text-xs cursor-pointer">
+                      Update Event
+                    </button>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
@@ -150,7 +143,7 @@ const Events = () => {
           {!loading && !error && totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mb-8">
               <button
-                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
@@ -158,7 +151,7 @@ const Events = () => {
               </button>
               <span className="px-4 py-2 font-semibold text-cyan-700">Page {page} of {totalPages}</span>
               <button
-                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
               >

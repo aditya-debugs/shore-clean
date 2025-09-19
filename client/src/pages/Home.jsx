@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Users, Calendar, Sparkles, Trophy, Shield, Globe, Quote, MapPin, ArrowRight, Star, Award, Loader } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Calendar, Users, Trophy, Heart, Sparkles, Globe, Shield, Award, Waves, ChevronLeft, ChevronRight, MapPin, Clock, ArrowRight, Star, Loader, Quote, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const Home = () => {
   const [quotes, setQuotes] = useState([]);
@@ -12,6 +13,9 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const { currentUser } = useAuth();
+  const isAuthenticated = !!currentUser;
 
   useEffect(() => {
     setTimeout(() => {
@@ -189,15 +193,38 @@ const Home = () => {
           ))}
         </div>
         <div className="max-w-6xl mx-auto relative z-10 text-center text-white">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Protecting Our
-            <br />
-            <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
-              Coastal Heritage
-            </span>
-          </h1>
-          {/* Quotes Section - Synchronized with Carousel */}
-          <div className="max-w-3xl mx-auto mb-12 relative">
+          {isAuthenticated ? (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Welcome Back,
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  {currentUser?.name}
+                </span>
+              </h1>
+              
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Ready to make a difference? Browse events, track your impact, and connect with your environmental community.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                Protect Our
+                <br />
+                <span className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                  Coastal Heritage
+                </span>
+              </h1>
+              
+              <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
+                Join the movement to keep our beaches clean and oceans healthy through technology-powered community action.
+              </p>
+            </>
+          )}
+          
+          {/* Quotes Section */}
+          <div className="max-w-3xl mx-auto mb-12">
             {quotes.map((quote, index) => (
               <div
                 key={index}
@@ -217,14 +244,41 @@ const Home = () => {
           </div>
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
-              <Users className="h-5 w-5 mr-2" />
-              Join as Volunteer
-            </button>
-            <button className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl border border-cyan-500/50 font-semibold flex items-center justify-center transition-all duration-300 hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
-              <Calendar className="h-5 w-5 mr-2" />
-              Organize Event
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to="/events"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Browse Events
+                </Link>
+                <Link 
+                  to="/dashboard"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  My Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/register"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Users className="h-5 w-5 mr-2" />
+                  Join as Volunteer
+                </Link>
+                <Link 
+                  to="/login"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -274,9 +328,19 @@ const Home = () => {
                         <div className="text-xs text-gray-500">by {event.organizer}</div>
                       </div>
                     </div>
-                    <button className="w-full mt-4 px-4 py-2 bg-cyan-600 text-white rounded-lg font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
-                      Join Event
-                    </button>
+                    
+                    {isAuthenticated ? (
+                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
+                        Join Event
+                      </button>
+                    ) : (
+                      <Link 
+                        to="/register"
+                        className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium text-center block"
+                      >
+                        Sign Up to Join
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
@@ -290,17 +354,27 @@ const Home = () => {
           )}
           <div className="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/events">
-              <button className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 hover:scale-105 hover:shadow-2xl transition-all duration-300 font-semibold cursor-pointer">
+              {/* <button className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 hover:scale-105 hover:shadow-2xl transition-all duration-300 font-semibold cursor-pointer">
                 View All Events
                 <ArrowRight className="h-5 w-5 ml-2" />
-              </button>
+              </button> */}
             </Link>
             <Link to="/admin/create-event">
               <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
                 Create Event
               </button>
             </Link>
+
+          <div className="text-center">
+            <Link 
+              to={isAuthenticated ? "/events" : "/register"}
+              className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
+            >
+              {isAuthenticated ? "View More Events" : "Join to See Events"}
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Link>
           </div>
+        </div>
         </div>
       </section>
 
@@ -402,10 +476,12 @@ const Home = () => {
                 Join our growing community of environmental champions and help create cleaner, 
                 healthier coastlines for future generations.
               </p>
-              <button className="px-10 py-4 bg-white text-cyan-600 rounded-2xl font-semibold text-lg shadow-lg transition-all duration-300 transform hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
-                Get Started Today
-              </button>
-              {/* Removed Create Event button from CTA section */}
+              <Link 
+                to={isAuthenticated ? "/dashboard" : "/register"}
+                className="inline-block px-10 py-4 bg-white text-cyan-600 rounded-2xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl"
+              >
+                {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
+              </Link>
             </div>
           </div>
         </div>

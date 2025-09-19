@@ -1,5 +1,5 @@
 // server/src/index.js
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -21,7 +21,13 @@ app.use(cookieParser());
 
 // CORS: allow client to send cookies to server
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:5175',
+    'http://localhost:5176',
+    process.env.CLIENT_URL || 'http://localhost:3000'
+  ],
   credentials: true,
 }));
 

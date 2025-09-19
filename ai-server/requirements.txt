@@ -1,0 +1,26 @@
+# Web framework
+fastapi==0.115.0
+uvicorn==0.30.6
+
+# LLMs / LangGraph
+openai==1.45.0
+langgraph==0.2.35
+langchain==0.3.3
+langchain-core==0.3.10
+typing-extensions==4.12.2
+
+# Env management
+python-dotenv==1.0.1
+
+# Database (MongoDB, async)
+motor==3.6.0
+
+# Image handling
+Pillow==10.4.0
+requests==2.32.3
+
+# Cloudinary
+cloudinary==1.41.0
+
+# Utils
+annotated-types==0.7.0

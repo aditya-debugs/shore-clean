@@ -9,10 +9,14 @@ const register = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password required' });
     }
+    
+    // Set default role if not provided or empty
+    const userRole = role && role.trim() !== '' ? role : 'user';
+    
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already registered' });
 
-    const user = new User({ name, email, password, role });
+    const user = new User({ name, email, password, role: userRole });
     await user.save();
 
     const accessToken = createAccessToken({ userId: user._id, role: user.role });

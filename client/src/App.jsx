@@ -12,6 +12,7 @@ import EventDetails from "./pages/EventDetails";
 import CreateEvent from "./pages/admin/CreateEvent";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Profile from "./pages/Profile";
@@ -85,6 +86,16 @@ function App() {
             element={
               <PrivateRoute>
                 <Donations />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Chat Community Route */}
+          <Route
+            path="/chat"
+            element={
+              <PrivateRoute>
+                <ChatCommunity />
               </PrivateRoute>
             }
           />

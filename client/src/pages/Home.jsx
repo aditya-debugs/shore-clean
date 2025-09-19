@@ -19,6 +19,7 @@ import {
   Loader,
   Quote,
   LogIn,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
@@ -285,19 +286,46 @@ const Home = () => {
           {/* CTA Buttons */}
           {isAuthenticated && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
+              <Link
                 to="/events"
                 className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-50 hover:text-cyan-900"
               >
                 <Calendar className="h-5 w-5 mr-2" />
                 Browse Events
               </Link>
-              <Link 
+              <Link
+                to="/chat"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:from-green-600 hover:to-emerald-600"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Chat Community
+              </Link>
+              <Link
                 to="/dashboard"
                 className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl border border-cyan-500/50 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-700"
               >
                 <Trophy className="h-5 w-5 mr-2" />
                 My Dashboard
+              </Link>
+            </div>
+          )}
+
+          {/* CTA Buttons for Non-Authenticated Users */}
+          {!isAuthenticated && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-50 hover:text-cyan-900"
+              >
+                <Users className="h-5 w-5 mr-2" />
+                Join Our Community
+              </Link>
+              <Link
+                to="/login"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:from-green-600 hover:to-emerald-600"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Access Chat Community
               </Link>
             </div>
           )}
@@ -395,7 +423,6 @@ const Home = () => {
             </div>
           )}
           <div className="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
-            
             <Link to="/admin/create-event">
               <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
                 Create Event
@@ -522,14 +549,12 @@ const Home = () => {
         </div>
         {/* Donation & Dashboard Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-          
-          <Link 
+          <Link
             to="/dashboard"
             className="px-8 py-4 bg-cyan-600 text-white rounded-xl font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105 hover:bg-cyan-700 ml-0 sm:ml-4"
           >
             Go to Dashboard
           </Link>
-          
         </div>
       </section>
 
@@ -553,7 +578,6 @@ const Home = () => {
               >
                 {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
               </Link>
-              
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8000";
 
 export const useSocket = (orgId, groupId = null, user = null) => {
   const [socket, setSocket] = useState(null);
@@ -30,7 +30,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
     }
 
     console.log(
-      `Connecting socket for user: ${user.name} (${user.id}) to group: ${groupId}`
+      `🔌 Connecting socket to ${SOCKET_URL} for user: ${user.name} (${user._id}) to group: ${groupId}`
     );
 
     // Initialize socket connection
@@ -52,7 +52,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
       newSocket.emit("join_room", {
         orgId,
         groupId,
-        userId: user.id,
+        userId: user._id,
         username: user.name,
       });
     });
@@ -164,7 +164,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
       setIsConnected(false);
       setSocket(null);
     };
-  }, [orgId, groupId, user?.id]); // Add user.id as dependency
+  }, [orgId, groupId, user?._id]); // Add user._id as dependency
 
   // Send message function
   const sendMessage = (messageText) => {
@@ -173,7 +173,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
     const messageData = {
       orgId,
       groupId,
-      userId: user.id,
+      userId: user._id,
       username: user.name,
       message: messageText.trim(),
       timestamp: new Date(),
@@ -190,7 +190,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
     socket.emit("typing", {
       orgId,
       groupId,
-      userId: user.id,
+      userId: user._id,
       username: user.name,
     });
   };
@@ -201,7 +201,7 @@ export const useSocket = (orgId, groupId = null, user = null) => {
     socket.emit("stop_typing", {
       orgId,
       groupId,
-      userId: user.id,
+      userId: user._id,
       username: user.name,
     });
   };

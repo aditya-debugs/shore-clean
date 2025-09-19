@@ -2,61 +2,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "../hooks/useSocket";
 import { chatAPI, groupsAPI } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 import MessageBubble from "../components/MessageBubble";
 import OnlineUsersList from "../components/OnlineUsersList";
 import TypingIndicator from "../components/TypingIndicator";
 import GroupList from "../components/GroupList";
 import GroupManagement from "../components/GroupManagement";
 
-// Mock user data - generate different users for testing
-const generateMockUser = () => {
-  const users = [
-    {
-      id: "user1",
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      role: "volunteer",
-    },
-    {
-      id: "user2",
-      name: "Bob Smith",
-      email: "bob@example.com",
-      role: "organizer",
-    },
-    {
-      id: "user3",
-      name: "Carol Davis",
-      email: "carol@example.com",
-      role: "volunteer",
-    },
-    {
-      id: "user4",
-      name: "David Wilson",
-      email: "david@example.com",
-      role: "admin",
-    },
-  ];
-
-  // Check URL parameters first
-  const urlParams = new URLSearchParams(window.location.search);
-  const userParam = urlParams.get("user");
-
-  if (userParam && users.find((u) => u.id === userParam)) {
-    return users.find((u) => u.id === userParam);
-  }
-
-  // Fallback to session storage or random
-  const sessionId =
-    sessionStorage.getItem("mockUserId") ||
-    `user${Math.floor(Math.random() * users.length) + 1}`;
-  sessionStorage.setItem("mockUserId", sessionId);
-
-  return users.find((u) => u.id === sessionId) || users[0];
-};
-
-const mockUser = generateMockUser();
-
 const ChatCommunity = () => {
+  // Get authenticated user
+  const { currentUser } = useAuth();
+
   // Component state
   const [messageInput, setMessageInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -72,7 +28,36 @@ const ChatCommunity = () => {
   const orgId = "674d123456789012345678ab";
   const orgName = "Mumbai Coastal Guardians Community";
 
-  // WebSocket connection - now group-based
+  // Auto-seed groups for testing
+  useEffect(() => {
+    const seedGroups = async () => {
+      try {
+        // Try to seed groups for testing (this will only create if none exist)
+        const response = await fetch(`/api/groups/${orgId}/seed`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Seed groups response:", data);
+        }
+      } catch (error) {
+        console.log(
+          "Seed groups error (this is normal if groups already exist):",
+          error
+        );
+      }
+    };
+
+    if (orgId && currentUser) {
+      seedGroups();
+    }
+  }, [orgId, currentUser]);
+
+  // WebSocket connection - now group-based with authenticated user
   const {
     isConnected,
     messages,
@@ -84,7 +69,7 @@ const ChatCommunity = () => {
     sendMessage,
     handleTyping,
     markAsRead,
-  } = useSocket(orgId, selectedGroup?._id, mockUser);
+  } = useSocket(orgId, selectedGroup?._id, currentUser);
 
   // Refs for auto-scroll and input
   const messagesEndRef = useRef(null);
@@ -101,42 +86,19 @@ const ChatCommunity = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Switch user for testing
-  const switchUser = () => {
-    const users = [
-      {
-        id: "user1",
-        name: "Alice Johnson",
-        email: "alice@example.com",
-        role: "volunteer",
-      },
-      {
-        id: "user2",
-        name: "Bob Smith",
-        email: "bob@example.com",
-        role: "organizer",
-      },
-      {
-        id: "user3",
-        name: "Carol Davis",
-        email: "carol@example.com",
-        role: "volunteer",
-      },
-      {
-        id: "user4",
-        name: "David Wilson",
-        email: "david@example.com",
-        role: "admin",
-      },
-    ];
-
-    const currentIndex = users.findIndex((u) => u.id === mockUser.id);
-    const nextIndex = (currentIndex + 1) % users.length;
-    const newUser = users[nextIndex];
-
-    // Use URL parameter to switch user (this will reload the page)
-    window.location.href = `${window.location.pathname}?user=${newUser.id}`;
-  };
+  // Early return if user is not authenticated
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Authentication Required
+          </h2>
+          <p className="text-gray-600">Please log in to access the chat.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Load chat history from API - now group-based
   useEffect(() => {
@@ -296,15 +258,11 @@ const ChatCommunity = () => {
 
             {/* Header Actions */}
             <div className="flex items-center space-x-3">
-              {/* User Switcher for Testing */}
-              <button
-                onClick={switchUser}
-                className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors text-sm"
-                title="Switch User (Testing)"
-              >
+              {/* Current User Display */}
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
                 <span>👤</span>
-                <span>{mockUser.name}</span>
-              </button>
+                <span>{currentUser.name}</span>
+              </div>
 
               {/* Connection Status */}
               <div
@@ -351,7 +309,8 @@ const ChatCommunity = () => {
               </div>
 
               {/* Group Management Button (for organizers/admins) */}
-              {(mockUser.role === "organizer" || mockUser.role === "admin") && (
+              {(currentUser.role === "organizer" ||
+                currentUser.role === "admin") && (
                 <button
                   onClick={() => setShowGroupManagement(true)}
                   className="flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
@@ -432,7 +391,7 @@ const ChatCommunity = () => {
               orgId={orgId}
               orgName={orgName}
               onSelectGroup={handleGroupSelect}
-              currentUser={mockUser}
+              currentUser={currentUser}
               selectedGroupId={selectedGroup?._id}
             />
           ) : (
@@ -478,7 +437,7 @@ const ChatCommunity = () => {
                             <MessageBubble
                               key={message._id || index}
                               message={message}
-                              isCurrentUser={message.userId === mockUser.id}
+                              isCurrentUser={message.userId === currentUser._id}
                               showSender={true}
                               readReceipts={readReceipts.get(message._id) || []}
                               onMarkAsRead={markAsRead}
@@ -491,7 +450,7 @@ const ChatCommunity = () => {
                     {/* Typing Indicator */}
                     <TypingIndicator
                       typingUsers={typingUsers}
-                      currentUserId={mockUser.id}
+                      currentUserId={currentUser._id}
                     />
 
                     <div ref={messagesEndRef} />
@@ -655,7 +614,7 @@ const ChatCommunity = () => {
       {showGroupManagement && (
         <GroupManagement
           orgId={orgId}
-          currentUser={mockUser}
+          currentUser={currentUser}
           onClose={() => setShowGroupManagement(false)}
         />
       )}

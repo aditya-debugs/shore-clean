@@ -1,4 +1,5 @@
 const Group = require("../models/Group");
+const Community = require("../models/Community");
 const Chat = require("../models/Chat");
 const User = require("../models/User");
 const Event = require("../models/Event");
@@ -350,6 +351,44 @@ const getGroupMessages = async (req, res) => {
 // Create default groups for an organization
 const createDefaultGroups = async (orgId, createdBy) => {
   try {
+    // Check if groups already exist for this organization
+    const existingGroups = await Group.find({ orgId });
+    if (existingGroups.length > 0) {
+      console.log(
+        `Groups already exist for orgId ${orgId}, returning existing groups`
+      );
+      return existingGroups;
+    }
+
+    // First, create a test community if it doesn't exist
+    let community = await Community.findOne({
+      $or: [{ slug: "mumbai-coastal-guardians" }, { organizerId: orgId }],
+    });
+
+    if (!community) {
+      community = new Community({
+        name: "Mumbai Coastal Guardians Community",
+        description:
+          "A community dedicated to protecting Mumbai's coastal environment",
+        slug: "mumbai-coastal-guardians",
+        organizerId: orgId,
+        organizers: [orgId],
+        members: [orgId],
+        settings: {
+          isPublic: true,
+          allowMemberInvites: true,
+          autoApproveJoinRequests: true,
+        },
+        location: {
+          city: "Mumbai",
+          state: "Maharashtra",
+          country: "India",
+        },
+      });
+      await community.save();
+      console.log(`Created test community for orgId ${orgId}`);
+    }
+
     const defaultGroups = [
       {
         name: "General Announcements",
@@ -379,6 +418,7 @@ const createDefaultGroups = async (orgId, createdBy) => {
       const group = new Group({
         ...groupData,
         orgId,
+        communityId: community._id,
         createdBy,
         members: [
           {
@@ -393,10 +433,207 @@ const createDefaultGroups = async (orgId, createdBy) => {
       createdGroups.push(savedGroup);
     }
 
+    console.log(
+      `Created ${createdGroups.length} default groups for orgId ${orgId} in community ${community._id}`
+    );
     return createdGroups;
   } catch (error) {
     console.error("Error creating default groups:", error);
     throw error;
+  }
+};
+
+// Get all groups for a community
+const getCommunityGroups = async (req, res) => {
+  try {
+    const { communityId } = req.params;
+
+    if (!communityId) {
+      return res.status(400).json({ message: "Community ID is required" });
+    }
+
+    // Check if community exists and user has access
+    const community = await Community.findById(communityId);
+    if (!community || !community.isActive) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    const groups = await Group.find({
+      communityId,
+      isActive: true,
+    })
+      .populate("eventId", "title date location")
+      .populate("createdBy", "name email")
+      .sort({ createdAt: 1 });
+
+    // Get latest message for each group
+    const groupsWithLatestMessage = await Promise.all(
+      groups.map(async (group) => {
+        const latestMessage = await Chat.findOne({
+          groupId: group._id,
+        })
+          .sort({ timestamp: -1 })
+          .populate("userId", "name");
+
+        return {
+          ...group.toObject(),
+          latestMessage,
+          memberCount: group.members.length,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: groupsWithLatestMessage,
+    });
+  } catch (error) {
+    console.error("Error fetching community groups:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch community groups",
+    });
+  }
+};
+
+// Create a new group within a community
+const createCommunityGroup = async (req, res) => {
+  try {
+    const { communityId } = req.params;
+    const { name, description, type, eventId, icon, color } = req.body;
+    const createdBy = req.user._id; // From auth middleware
+
+    if (!name || !communityId) {
+      return res
+        .status(400)
+        .json({ message: "Group name and community ID are required" });
+    }
+
+    // Check if community exists
+    const community = await Community.findById(communityId);
+    if (!community || !community.isActive) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Check if user is an organizer of the community
+    const isOrganizer = community.organizers.some(
+      (org) => org.userId.toString() === createdBy.toString()
+    );
+
+    if (!isOrganizer && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only community organizers can create groups" });
+    }
+
+    // Validate event exists if eventId provided
+    if (eventId) {
+      const event = await Event.findById(eventId);
+      if (!event) {
+        return res.status(400).json({ message: "Event not found" });
+      }
+    }
+
+    const newGroup = new Group({
+      name,
+      description,
+      orgId: community.createdBy, // Use community creator as orgId for compatibility
+      communityId,
+      type: type || "general",
+      eventId: eventId || null,
+      icon: icon || "💬",
+      color: color || "#3B82F6",
+      createdBy,
+      members: [
+        {
+          userId: createdBy,
+          role: "admin",
+          joinedAt: new Date(),
+        },
+      ],
+    });
+
+    const savedGroup = await newGroup.save();
+    await savedGroup.populate("createdBy", "name email");
+
+    // Update community stats
+    await Community.findByIdAndUpdate(communityId, {
+      $inc: { "stats.totalGroups": 1 },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: savedGroup,
+      message: "Group created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating community group:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create group",
+      error: error.message,
+    });
+  }
+};
+
+// Join a group within a community
+const joinCommunityGroup = async (req, res) => {
+  try {
+    const { communityId, groupId } = req.params;
+    const userId = req.user._id;
+
+    // Check if community exists
+    const community = await Community.findById(communityId);
+    if (!community || !community.isActive) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Check if user is a member of the community
+    const isCommunityMember = community.members.some(
+      (member) => member.userId.toString() === userId.toString()
+    );
+
+    if (!isCommunityMember) {
+      return res.status(403).json({
+        message: "You must be a community member to join groups",
+      });
+    }
+
+    const group = await Group.findOne({ _id: groupId, communityId });
+    if (!group || !group.isActive) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Check if user is already a member
+    const existingMember = group.members.find(
+      (member) => member.userId.toString() === userId.toString()
+    );
+
+    if (existingMember) {
+      return res
+        .status(400)
+        .json({ message: "Already a member of this group" });
+    }
+
+    // Add user to group
+    group.members.push({
+      userId,
+      role: "member",
+      joinedAt: new Date(),
+    });
+
+    await group.save();
+
+    res.json({
+      success: true,
+      message: "Successfully joined the group",
+    });
+  } catch (error) {
+    console.error("Error joining community group:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to join group",
+    });
   }
 };
 
@@ -409,4 +646,7 @@ module.exports = {
   leaveGroup,
   getGroupMessages,
   createDefaultGroups,
+  getCommunityGroups,
+  createCommunityGroup,
+  joinCommunityGroup,
 };

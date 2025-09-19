@@ -16,6 +16,7 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const communityRoutes = require("./routes/communityRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +66,7 @@ app.use("/api/certificates", certificateRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/communities", communityRoutes);
 
 // Initialize Socket.io handlers for real-time chat
 initializeSocketHandlers(io);

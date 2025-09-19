@@ -9,6 +9,9 @@ const {
   leaveGroup,
   getGroupMessages,
   createDefaultGroups,
+  getCommunityGroups,
+  createCommunityGroup,
+  joinCommunityGroup,
 } = require("../controllers/groupController");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -19,9 +22,16 @@ router.get("/:orgId", getOrgGroups); // Get all groups for an organization
 router.post("/:orgId/seed", async (req, res) => {
   try {
     const { orgId } = req.params;
-    const groups = await createDefaultGroups(orgId, orgId); // Using orgId as createdBy for demo
-    res.json({ success: true, data: groups, message: "Demo groups created" });
+    // Use a placeholder createdBy for demo purposes
+    const createdBy = "674d123456789012345678ab"; // Placeholder user ID
+    const groups = await createDefaultGroups(orgId, createdBy);
+    res.json({
+      success: true,
+      data: groups,
+      message: "Demo groups created or already exist",
+    });
   } catch (error) {
+    console.error("Seed groups error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -41,5 +51,10 @@ router.post("/:groupId/leave", leaveGroup); // Leave a group
 
 // Group messages route
 router.get("/:groupId/messages", getGroupMessages); // Get group messages
+
+// Community group routes
+router.get("/community/:communityId", getCommunityGroups); // Get all groups for a community
+router.post("/community/:communityId", createCommunityGroup); // Create a new group in community
+router.post("/community/:communityId/:groupId/join", joinCommunityGroup); // Join a community group
 
 module.exports = router;

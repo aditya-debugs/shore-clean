@@ -18,7 +18,7 @@ const GroupList = ({
       setIsLoading(true);
       setError(null);
       try {
-        const response = await groupsAPI.getOrgGroups(orgId);
+        const response = await groupsAPI.getByOrganization(orgId);
         setGroups(response.data || []);
       } catch (err) {
         setError("Failed to load community groups");

@@ -7,6 +7,7 @@ import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Profile from './pages/Profile';
 
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
@@ -59,7 +60,7 @@ function App() {
           } />
           <Route path="/profile" element={
             <PrivateRoute>
-              <ComingSoon pageName="Profile" />
+              <Profile />
             </PrivateRoute>
           } />
           <Route path="/impact" element={<ComingSoon pageName="Impact" />} />

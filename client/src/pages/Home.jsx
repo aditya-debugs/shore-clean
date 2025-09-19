@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Trophy, Heart, Sparkles, Globe, Shield, Award, Waves, ChevronLeft, ChevronRight, MapPin, Clock, ArrowRight, Star, Loader, Quote } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, Users, Trophy, Heart, Sparkles, Globe, Shield, Award, Waves, ChevronLeft, ChevronRight, MapPin, Clock, ArrowRight, Star, Loader, Quote, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -12,6 +14,18 @@ const Home = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [features, setFeatures] = useState([]);
+  
+  // Safely get auth state with fallbacks
+  let isAuthenticated = false;
+  let user = null;
+  
+  try {
+    const authState = useAuth();
+    isAuthenticated = authState?.isAuthenticated || false;
+    user = authState?.user || null;
+  } catch (error) {
+    console.log('Auth not available:', error.message);
+  }
 
   // Fetch data from API (to be implemented)
   useEffect(() => {
@@ -209,14 +223,41 @@ const Home = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center">
-              <Users className="h-5 w-5 mr-2" />
-              Join as Volunteer
-            </button>
-            <button className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Organize Event
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to="/events"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Browse Events
+                </Link>
+                <Link 
+                  to="/dashboard"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  My Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/register"
+                  className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl hover:bg-white transition-all duration-300 shadow-lg font-semibold flex items-center justify-center"
+                >
+                  <Users className="h-5 w-5 mr-2" />
+                  Join as Volunteer
+                </Link>
+                <Link 
+                  to="/signin"
+                  className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl hover:bg-cyan-600 border border-cyan-500/50 transition-all duration-300 font-semibold flex items-center justify-center"
+                >
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -271,9 +312,18 @@ const Home = () => {
                       <div className="text-xs text-gray-500">by {event.organizer}</div>
                     </div>
                     
-                    <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
-                      Join Event
-                    </button>
+                    {isAuthenticated ? (
+                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
+                        Join Event
+                      </button>
+                    ) : (
+                      <Link 
+                        to="/register"
+                        className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium text-center block"
+                      >
+                        Sign Up to Join
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
@@ -287,10 +337,13 @@ const Home = () => {
           )}
 
           <div className="text-center">
-            <button className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold">
-              View More Events
+            <Link 
+              to={isAuthenticated ? "/events" : "/register"}
+              className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
+            >
+              {isAuthenticated ? "View More Events" : "Join to See Events"}
               <ArrowRight className="h-5 w-5 ml-2" />
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -393,9 +446,12 @@ const Home = () => {
                 Join our growing community of environmental champions and help create cleaner, 
                 healthier coastlines for future generations.
               </p>
-              <button className="px-10 py-4 bg-white text-cyan-600 rounded-2xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl">
-                Get Started Today
-              </button>
+              <Link 
+                to={isAuthenticated ? "/dashboard" : "/register"}
+                className="inline-block px-10 py-4 bg-white text-cyan-600 rounded-2xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl"
+              >
+                {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
+              </Link>
             </div>
           </div>
         </div>

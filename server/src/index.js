@@ -1,5 +1,5 @@
 // server/src/index.js
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');

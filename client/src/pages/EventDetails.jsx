@@ -17,29 +17,19 @@ const EventDetails = () => {
 		setUserId(localStorage.getItem("userId"));
 	}, []);
 
-	useEffect(() => {
-		const fetchEvent = async () => {
+		useEffect(() => {
 			setLoading(true);
 			setError("");
-			try {
-				const res = await fetch(`/api/events/${id}`);
-				if (!res.ok) {
-					let msg = "Failed to fetch event";
-					try {
-						const errData = await res.json();
-						if (errData.message) msg = errData.message;
-					} catch {}
-					throw new Error(msg);
-				}
-				const data = await res.json();
-				setEvent(data);
-			} catch (err) {
-				setError(err.message || "Unable to load event. Please try again later.");
+			// Fetch event from localStorage
+			const events = JSON.parse(localStorage.getItem("events")) || [];
+			const found = events.find(ev => ev._id === id);
+			if (found) {
+				setEvent(found);
+			} else {
+				setError("Event not found.");
 			}
 			setLoading(false);
-		};
-		fetchEvent();
-	}, [id]);
+		}, [id]);
 
 	const handleRSVP = async (alreadyRSVPed) => {
 		if (!event) return;

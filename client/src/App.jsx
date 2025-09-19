@@ -1,13 +1,3 @@
-import React from 'react';
-import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-
-// Import existing pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 flex items-center justify-center">
@@ -23,23 +13,46 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
+import React from 'react';
+import { Route, Routes, BrowserRouter, useLocation, Navigate, Link } from 'react-router-dom';
+import Home from './pages/Home';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
+import CreateEvent from './pages/admin/CreateEvent';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+          <Route path="/admin/create-event" element={<CreateEvent />} />
           {/* Protected Routes */}
           <Route path="/events" element={
             <PrivateRoute>
-              <ComingSoon pageName="Events" />
+              <Events />
+            </PrivateRoute>
+          } />
+          <Route path="/events/:id" element={
+            <PrivateRoute>
+              <EventDetails />
             </PrivateRoute>
           } />
           <Route path="/dashboard" element={
@@ -64,7 +77,6 @@ function App() {
           } />
           <Route path="/impact" element={<ComingSoon pageName="Impact" />} />
           <Route path="/about" element={<ComingSoon pageName="About" />} />
-          
           {/* 404 Route */}
           <Route path="*" element={
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
@@ -81,9 +93,9 @@ function App() {
             </div>
           } />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
-export default App
+export default App;

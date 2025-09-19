@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Users, MapPin, Loader, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Loader,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { getEvents } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "../index.css";
-
-const EVENTS_API = "/api/events";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -14,38 +21,65 @@ const Events = () => {
   const [limit] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState("");
-  const [userId, setUserId] = useState(null);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    const uid = localStorage.getItem("userId");
-    setUserId(uid);
-  }, []);
+    const fetchEvents = async () => {
+      setLoading(true);
+      setError("");
 
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    // Read events from localStorage
-    let allEvents = JSON.parse(localStorage.getItem("events")) || [];
-    // Simple pagination
-    const startIdx = (page - 1) * limit;
-    const pagedEvents = allEvents.slice(startIdx, startIdx + limit);
-    setEvents(pagedEvents);
-    setTotalPages(Math.max(1, Math.ceil(allEvents.length / limit)));
-    setLoading(false);
+      try {
+        const response = await getEvents({ page, limit });
+        setEvents(response.events || []);
+        setTotalPages(
+          Math.max(
+            1,
+            Math.ceil((response.total || response.events?.length || 0) / limit)
+          )
+        );
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Failed to load events. Please try again later.");
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, [page, limit]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
+    if (!currentUser) {
+      alert("Please log in to RSVP for events.");
+      return;
+    }
+
     try {
-      const endpoint = alreadyRSVPed ? `${EVENTS_API}/${eventId}/cancel-rsvp` : `${EVENTS_API}/${eventId}/rsvp`;
-      const res = await fetch(endpoint, { method: "POST" });
-      if (!res.ok) throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
+      const endpoint = alreadyRSVPed
+        ? `/api/events/${eventId}/cancel-rsvp`
+        : `/api/events/${eventId}/rsvp`;
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUser.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok)
+        throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
+
       const result = await res.json();
+
+      // Update the local state with the new attendees list
       setEvents((evts) =>
         evts.map((ev) =>
           ev._id === eventId ? { ...ev, attendees: result.event.attendees } : ev
         )
       );
-    } catch {
+    } catch (error) {
+      console.error("RSVP error:", error);
       alert("Could not update RSVP. Please try again.");
     }
   };
@@ -56,10 +90,14 @@ const Events = () => {
       <section className="pt-32 pb-12 px-6">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900">
-            Upcoming <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">Events</span>
+            Upcoming{" "}
+            <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
+              Events
+            </span>
           </h1>
           <p className="text-lg text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            Discover and join coastal clean-up events near you. RSVP to secure your spot and make an impact!
+            Discover and join coastal clean-up events near you. RSVP to secure
+            your spot and make an impact!
           </p>
 
           {loading && (
@@ -72,9 +110,13 @@ const Events = () => {
             <div className="text-center text-red-500 py-12">
               {error}
               <div className="mt-4 text-sm text-gray-500">
-                Please check your backend server and API route.<br />
-                <span className="font-mono">GET /api/events</span> should return a list of events.<br />
-                If you are running locally, make sure the server is started and CORS is configured if needed.
+                Please check your backend server and API route.
+                <br />
+                <span className="font-mono">GET /api/events</span> should return
+                a list of events.
+                <br />
+                If you are running locally, make sure the server is started and
+                CORS is configured if needed.
               </div>
             </div>
           )}
@@ -82,8 +124,12 @@ const Events = () => {
           {!loading && !error && events.length === 0 && (
             <div className="text-center py-12 bg-white/80 rounded-xl border border-gray-200/50 mb-12">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-600 mb-2">No upcoming events</h3>
-              <p className="text-gray-500">Check back later for new coastal cleanup events.</p>
+              <h3 className="text-xl font-medium text-gray-600 mb-2">
+                No upcoming events
+              </h3>
+              <p className="text-gray-500">
+                Check back later for new coastal cleanup events.
+              </p>
             </div>
           )}
 
@@ -98,11 +144,19 @@ const Events = () => {
                   >
                     <div
                       className="h-48 bg-cover bg-center relative"
-                      style={{ backgroundImage: `url(${event.bannerUrl || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"})` }}
+                      style={{
+                        backgroundImage: `url(${
+                          event.bannerUrl ||
+                          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"
+                        })`,
+                      }}
                     >
                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
                       <div className="absolute top-2 right-2 bg-white/80 rounded-full px-3 py-1 text-xs font-semibold text-cyan-600 shadow-md backdrop-blur">
-                        {new Date(event.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {new Date(event.startDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </div>
                     </div>
                     <div className="p-6 flex flex-col justify-between min-h-[260px]">
@@ -110,19 +164,27 @@ const Events = () => {
                         <h3 className="text-2xl font-bold text-gray-800 mb-2 tracking-tight">
                           {event.title}
                         </h3>
-                        <p className="text-gray-600 mb-3 line-clamp-2 min-h-[2.5em]">{event.description}</p>
+                        <p className="text-gray-600 mb-3 line-clamp-2 min-h-[2.5em]">
+                          {event.description}
+                        </p>
                         <div className="flex items-center text-gray-600 mb-3">
                           <MapPin className="h-4 w-4 mr-2" />
-                          <span className="text-sm font-medium">{event.location}</span>
+                          <span className="text-sm font-medium">
+                            {event.location}
+                          </span>
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center text-cyan-500">
                             <Users className="h-4 w-4 mr-1" />
-                            <span className="text-sm font-medium">{event.attendees?.length || 0} joined</span>
+                            <span className="text-sm font-medium">
+                              {event.attendees?.length || 0} joined
+                            </span>
                           </div>
-                          <div className="text-xs text-gray-500">by {event.organizer?.name || "Organizer"}</div>
+                          <div className="text-xs text-gray-500">
+                            by {event.organizer?.name || "Organizer"}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -149,7 +211,9 @@ const Events = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <span className="px-4 py-2 font-semibold text-cyan-700">Page {page} of {totalPages}</span>
+              <span className="px-4 py-2 font-semibold text-cyan-700">
+                Page {page} of {totalPages}
+              </span>
               <button
                 className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

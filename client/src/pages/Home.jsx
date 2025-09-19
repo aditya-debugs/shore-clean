@@ -24,6 +24,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { getEvents } from "../utils/api";
 
 const Home = () => {
   const [quotes, setQuotes] = useState([]);
@@ -156,15 +157,17 @@ const Home = () => {
           gradient: "from-indigo-400 to-blue-400",
         },
       ]);
-      // Load events from localStorage
-      const storedEvents = localStorage.getItem("events");
-      let events = [];
-      try {
-        events = storedEvents ? JSON.parse(storedEvents) : [];
-      } catch (e) {
-        events = [];
-      }
-      setUpcomingEvents(events);
+
+      // Load events from API
+      getEvents({ page: 1, limit: 3 })
+        .then((eventsData) => {
+          setUpcomingEvents(eventsData.events || []);
+        })
+        .catch((error) => {
+          console.error("Error loading events for home page:", error);
+          setUpcomingEvents([]);
+        });
+
       setLoading(false);
     }, 1000);
   }, []);
@@ -484,8 +487,8 @@ const Home = () => {
         </div>
       </section>
 
-  {/* Testimonials Section */}
-  <section id="testimonials" className="py-20 px-6 bg-white/80">
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 px-6 bg-white/80">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-800 mb-4">

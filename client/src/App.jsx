@@ -1,5 +1,5 @@
 import React from "react";
-import DonationSuccess from './pages/DonationSuccess';
+import DonationSuccess from "./pages/DonationSuccess";
 import {
   Route,
   Routes,
@@ -52,11 +52,18 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin/create-event" element={<CreateEvent />} />
           <Route path="/donation-success" element={<DonationSuccess />} />
           <Route path="/success" element={<DonationSuccess />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/admin/create-event"
+            element={
+              <PrivateRoute>
+                <CreateEvent />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/events"
             element={

@@ -1,21 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Calendar, Users, MapPin, Loader, ArrowLeft, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Loader,
+  ArrowLeft,
+  Trash2,
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Box from "@mui/material/Box";
 import Rating from "@mui/material/Rating";
 import Typography from "@mui/material/Typography";
+import { getEventById } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [userId, setUserId] = useState(null);
 
-  // Ratings
+  // Ratings (keeping localStorage for now since no backend implementation)
   const [rating, setRating] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
 
@@ -24,64 +33,80 @@ const EventDetails = () => {
   const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
-    setUserId(localStorage.getItem("userId"));
-  }, []);
+    const fetchEventAndComments = async () => {
+      if (!id) return;
 
-  useEffect(() => {
-    setLoading(true);
-    setError("");
+      setLoading(true);
+      setError("");
 
-    const events = JSON.parse(localStorage.getItem("events")) || [];
-    const found = events.find((ev) => ev._id === id);
+      try {
+        // Fetch event data from API
+        const eventData = await getEventById(id);
+        setEvent(eventData);
 
-    if (found) {
-      setEvent(found);
-
-      // Load ratings
-      const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
-      if (ratings[id]) {
-        const { userRatings } = ratings[id];
-        const userRating = userRatings[userId] || 0;
-        setRating(userRating);
-
-        const values = Object.values(userRatings);
-        if (values.length > 0) {
-          const avg = values.reduce((a, b) => a + b, 0) / values.length;
-          setAvgRating(avg);
+        // Fetch comments from API
+        const commentsRes = await fetch(`/api/comments/${id}`);
+        if (commentsRes.ok) {
+          const commentsData = await commentsRes.json();
+          setComments(commentsData);
         }
+
+        // Load ratings from localStorage (since no backend implementation yet)
+        const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
+        if (ratings[id] && user?._id) {
+          const { userRatings } = ratings[id];
+          const userRating = userRatings[user._id] || 0;
+          setRating(userRating);
+
+          const values = Object.values(userRatings);
+          if (values.length > 0) {
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            setAvgRating(avg);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching event:", err);
+        setError("Failed to load event details");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Load comments
-      const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-      setComments(allComments[id] || []);
-    } else {
-      setError("Event not found.");
-    }
-
-    setLoading(false);
-  }, [id, userId]);
+    fetchEventAndComments();
+  }, [id, user?._id]);
 
   const handleRSVP = async (alreadyRSVPed) => {
-    if (!event) return;
+    if (!event || !user) return;
+
     try {
       const endpoint = alreadyRSVPed
         ? `/api/events/${event._id}/cancel-rsvp`
         : `/api/events/${event._id}/rsvp`;
-      const res = await fetch(endpoint, { method: "POST" });
-      if (!res.ok) throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok)
+        throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
       const result = await res.json();
       setEvent(result.event);
-    } catch {
+    } catch (error) {
+      console.error("RSVP error:", error);
       alert("Could not update RSVP. Please try again.");
     }
   };
 
   const handleRatingChange = (newValue) => {
+    if (!user?._id) return;
+
     setRating(newValue);
 
     const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
     if (!ratings[id]) ratings[id] = { userRatings: {} };
-    ratings[id].userRatings[userId] = newValue;
+    ratings[id].userRatings[user._id] = newValue;
 
     const values = Object.values(ratings[id].userRatings);
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
@@ -90,29 +115,52 @@ const EventDetails = () => {
     localStorage.setItem("ratings", JSON.stringify(ratings));
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-    if (!allComments[id]) allComments[id] = [];
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !user?._id) return;
 
-    const newEntry = {
-      id: Date.now().toString(),
-      userId,
-      text: newComment,
-    };
+    try {
+      const response = await fetch(`/api/comments/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          text: newComment,
+          userId: user._id,
+        }),
+      });
 
-    allComments[id].push(newEntry);
-    setComments(allComments[id]);
-    localStorage.setItem("comments", JSON.stringify(allComments));
-    setNewComment("");
+      if (response.ok) {
+        const newCommentData = await response.json();
+        setComments((prev) => [...prev, newCommentData]);
+        setNewComment("");
+      } else {
+        alert("Failed to add comment. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("Failed to add comment. Please try again.");
+    }
   };
 
-  const handleDeleteComment = (commentId) => {
-    const allComments = JSON.parse(localStorage.getItem("comments")) || {};
-    if (allComments[id]) {
-      allComments[id] = allComments[id].filter((c) => c.id !== commentId);
-      setComments(allComments[id]);
-      localStorage.setItem("comments", JSON.stringify(allComments));
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        setComments((prev) => prev.filter((c) => c._id !== commentId));
+      } else {
+        alert("Failed to delete comment. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("Failed to delete comment. Please try again.");
     }
   };
 
@@ -165,7 +213,9 @@ const EventDetails = () => {
                     ))}
                 </div>
                 <span
-                  className={`absolute top-4 left-6 px-4 py-1 rounded-full text-sm font-semibold shadow-md backdrop-blur ${statusColors[event.status]}`}
+                  className={`absolute top-4 left-6 px-4 py-1 rounded-full text-sm font-semibold shadow-md backdrop-blur ${
+                    statusColors[event.status]
+                  }`}
                 >
                   {event.status}
                 </span>
@@ -178,7 +228,10 @@ const EventDetails = () => {
 
               {/* Rating */}
               <Box sx={{ mb: 3 }}>
-                <Typography component="legend" className="text-lg font-semibold">
+                <Typography
+                  component="legend"
+                  className="text-lg font-semibold"
+                >
                   Rate this Event
                 </Typography>
                 <Rating
@@ -237,13 +290,19 @@ const EventDetails = () => {
                 <h2 className="text-xl font-semibold mb-3">Comments</h2>
                 {comments.map((c) => (
                   <div
-                    key={c.id}
+                    key={c._id}
                     className="flex justify-between items-center bg-white p-2 rounded-lg shadow mb-2"
                   >
-                    <span className="text-gray-800">{c.text}</span>
-                    {c.userId === userId && (
+                    <div>
+                      <span className="text-gray-800">{c.text}</span>
+                      <div className="text-xs text-gray-500 mt-1">
+                        by {c.userId?.name || "Anonymous"} •{" "}
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    {c.userId?._id === user?._id && (
                       <button
-                        onClick={() => handleDeleteComment(c.id)}
+                        onClick={() => handleDeleteComment(c._id)}
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 size={16} />
@@ -269,8 +328,8 @@ const EventDetails = () => {
               </div>
 
               {/* RSVP */}
-              {userId &&
-                (event.attendees?.includes(userId) ? (
+              {user?._id &&
+                (event.attendees?.includes(user._id) ? (
                   <button
                     className="w-full mt-6 px-4 py-3 bg-cyan-100 text-cyan-600 rounded-xl border border-cyan-300 font-bold cursor-pointer hover:bg-cyan-200 transition-all duration-300 shadow-lg"
                     onClick={() => handleRSVP(true)}

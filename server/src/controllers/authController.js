@@ -14,8 +14,7 @@ const register = async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already registered' });
 
-
-    const user = new User({ name, email, password, role: userRole, profileImage });
+    const user = new User({ name, email, password, role: userRole });
     await user.save();
 
     const accessToken = createAccessToken({ userId: user._id, role: user.role });
@@ -30,7 +29,7 @@ const register = async (req, res) => {
     });
 
     res.status(201).json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, profileImage: user.profileImage },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
       accessToken,
     });
   } catch (err) {
@@ -106,7 +105,6 @@ const getProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      profileImage: user.profileImage,
       createdAt: user.createdAt
     });
   } catch (err) {
@@ -131,7 +129,6 @@ const updateProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      profileImage: user.profileImage,
       createdAt: user.createdAt
     });
   } catch (err) {

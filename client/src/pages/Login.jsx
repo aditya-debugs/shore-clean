@@ -58,7 +58,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-      <Navbar />
       
       {/* Hero Background Section */}
       <div className="pt-32 pb-20 relative overflow-hidden">
@@ -188,7 +187,7 @@ const Login = () => {
         </div>
       </div>
 
-      <Footer />
+      
     </div>
   );
 };

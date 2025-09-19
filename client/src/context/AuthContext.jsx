@@ -54,16 +54,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/register', userData);
       const { user, accessToken } = response.data;
-      
       const userWithToken = {
         ...user,
         token: accessToken
       };
-
-      // Save to localStorage and state
       localStorage.setItem('user', JSON.stringify(userWithToken));
       setCurrentUser(userWithToken);
-      
       return { success: true };
     } catch (error) {
       console.error('Register error:', error.response?.data);
@@ -79,12 +75,32 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
+  const updateProfile = async (userData) => {
+    try {
+      const response = await api.put('/auth/profile', userData);
+      const { user } = response.data;
+      const userWithToken = {
+        ...user,
+        token: currentUser.token
+      };
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      setCurrentUser(userWithToken);
+      return { success: true };
+    } catch (error) {
+      console.error('Update profile error:', error.response?.data);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Profile update failed'
+      };
+    }
+  };
+
   const value = {
     currentUser,
     login,
     register,
     logout,
-    loading
+    updateProfile
   };
 
   return (

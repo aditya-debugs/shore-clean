@@ -32,7 +32,6 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
-
 function ScrollToTop() {
   const { pathname } = useLocation();
   React.useEffect(() => {

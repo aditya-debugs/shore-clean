@@ -8,13 +8,53 @@ import TypingIndicator from "../components/TypingIndicator";
 import GroupList from "../components/GroupList";
 import GroupManagement from "../components/GroupManagement";
 
-// Mock user data - replace with actual auth context
-const mockUser = {
-  id: "currentUser",
-  name: "You",
-  email: "user@example.com",
-  role: "volunteer",
+// Mock user data - generate different users for testing
+const generateMockUser = () => {
+  const users = [
+    {
+      id: "user1",
+      name: "Alice Johnson",
+      email: "alice@example.com",
+      role: "volunteer",
+    },
+    {
+      id: "user2",
+      name: "Bob Smith",
+      email: "bob@example.com",
+      role: "organizer",
+    },
+    {
+      id: "user3",
+      name: "Carol Davis",
+      email: "carol@example.com",
+      role: "volunteer",
+    },
+    {
+      id: "user4",
+      name: "David Wilson",
+      email: "david@example.com",
+      role: "admin",
+    },
+  ];
+
+  // Check URL parameters first
+  const urlParams = new URLSearchParams(window.location.search);
+  const userParam = urlParams.get("user");
+
+  if (userParam && users.find((u) => u.id === userParam)) {
+    return users.find((u) => u.id === userParam);
+  }
+
+  // Fallback to session storage or random
+  const sessionId =
+    sessionStorage.getItem("mockUserId") ||
+    `user${Math.floor(Math.random() * users.length) + 1}`;
+  sessionStorage.setItem("mockUserId", sessionId);
+
+  return users.find((u) => u.id === sessionId) || users[0];
 };
+
+const mockUser = generateMockUser();
 
 const ChatCommunity = () => {
   // Component state
@@ -26,10 +66,11 @@ const ChatCommunity = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  // Mock data - replace with actual props/params or context
-  const orgId = "org123";
-  const orgName = "Mumbai Coastal Guardians";
+  // Demo organization data - replace with actual props/params or context
+  const orgId = "674d123456789012345678ab";
+  const orgName = "Mumbai Coastal Guardians Community";
 
   // WebSocket connection - now group-based
   const {
@@ -38,9 +79,11 @@ const ChatCommunity = () => {
     typingUsers,
     onlineUsers,
     currentGroup,
+    readReceipts,
     error,
     sendMessage,
     handleTyping,
+    markAsRead,
   } = useSocket(orgId, selectedGroup?._id, mockUser);
 
   // Refs for auto-scroll and input
@@ -57,6 +100,43 @@ const ChatCommunity = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Switch user for testing
+  const switchUser = () => {
+    const users = [
+      {
+        id: "user1",
+        name: "Alice Johnson",
+        email: "alice@example.com",
+        role: "volunteer",
+      },
+      {
+        id: "user2",
+        name: "Bob Smith",
+        email: "bob@example.com",
+        role: "organizer",
+      },
+      {
+        id: "user3",
+        name: "Carol Davis",
+        email: "carol@example.com",
+        role: "volunteer",
+      },
+      {
+        id: "user4",
+        name: "David Wilson",
+        email: "david@example.com",
+        role: "admin",
+      },
+    ];
+
+    const currentIndex = users.findIndex((u) => u.id === mockUser.id);
+    const nextIndex = (currentIndex + 1) % users.length;
+    const newUser = users[nextIndex];
+
+    // Use URL parameter to switch user (this will reload the page)
+    window.location.href = `${window.location.pathname}?user=${newUser.id}`;
+  };
 
   // Load chat history from API - now group-based
   useEffect(() => {
@@ -97,9 +177,25 @@ const ChatCommunity = () => {
   // Handle sending messages
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !isConnected || !selectedGroup) return;
+    if (
+      (!messageInput.trim() && !selectedFile) ||
+      !isConnected ||
+      !selectedGroup
+    )
+      return;
 
-    sendMessage(messageInput);
+    if (selectedFile) {
+      // For now, just send a file message indication (full file upload would need server support)
+      sendMessage(
+        `📄 ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(
+          2
+        )} MB)`
+      );
+      setSelectedFile(null);
+    } else {
+      sendMessage(messageInput);
+    }
+
     setMessageInput("");
     setShowEmojiPicker(false);
 
@@ -200,6 +296,16 @@ const ChatCommunity = () => {
 
             {/* Header Actions */}
             <div className="flex items-center space-x-3">
+              {/* User Switcher for Testing */}
+              <button
+                onClick={switchUser}
+                className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors text-sm"
+                title="Switch User (Testing)"
+              >
+                <span>👤</span>
+                <span>{mockUser.name}</span>
+              </button>
+
               {/* Connection Status */}
               <div
                 className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
@@ -374,6 +480,8 @@ const ChatCommunity = () => {
                               message={message}
                               isCurrentUser={message.userId === mockUser.id}
                               showSender={true}
+                              readReceipts={readReceipts.get(message._id) || []}
+                              onMarkAsRead={markAsRead}
                             />
                           ))}
                         </div>
@@ -427,6 +535,27 @@ const ChatCommunity = () => {
                   </div>
                 )}
 
+                {/* Selected File Preview */}
+                {selectedFile && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span>📄</span>
+                      <span className="text-sm text-gray-700">
+                        {selectedFile.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedFile(null)}
+                      className="text-red-500 hover:text-red-600 text-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
                 <form onSubmit={handleSendMessage} className="flex space-x-3">
                   <div className="flex-1 relative">
                     <textarea
@@ -434,7 +563,7 @@ const ChatCommunity = () => {
                       value={messageInput}
                       onChange={handleInputChange}
                       placeholder={`Message ${selectedGroup.name}...`}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                       rows="1"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
@@ -444,6 +573,21 @@ const ChatCommunity = () => {
                       }}
                       disabled={!isConnected}
                     />
+
+                    {/* File Upload Button */}
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      onChange={(e) => setSelectedFile(e.target.files[0])}
+                      accept="image/*,video/*,.pdf,.doc,.docx"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="absolute right-10 top-3 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                      📎
+                    </label>
 
                     {/* Emoji Button */}
                     <button
@@ -457,7 +601,9 @@ const ChatCommunity = () => {
 
                   <button
                     type="submit"
-                    disabled={!messageInput.trim() || !isConnected}
+                    disabled={
+                      (!messageInput.trim() && !selectedFile) || !isConnected
+                    }
                     className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
                   >
                     <svg

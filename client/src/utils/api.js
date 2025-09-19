@@ -80,7 +80,7 @@ export const chatAPI = {
 // Groups APIs
 export const groupsAPI = {
   // Get all groups for organization
-  getOrgGroups: (orgId) => apiRequest(`/groups/org/${orgId}`),
+  getOrgGroups: (orgId) => apiRequest(`/groups/${orgId}`),
 
   // Get specific group details
   getGroup: (groupId) => apiRequest(`/groups/${groupId}`),

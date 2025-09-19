@@ -1,8 +1,21 @@
 // MessageBubble.jsx - Individual message component
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const MessageBubble = ({ message, isCurrentUser, showSender = true }) => {
+const MessageBubble = ({
+  message,
+  isCurrentUser,
+  showSender = true,
+  readReceipts = [],
+  onMarkAsRead,
+}) => {
   const [showFullTime, setShowFullTime] = useState(false);
+
+  // Mark message as read when it becomes visible (if not current user's message)
+  useEffect(() => {
+    if (!isCurrentUser && onMarkAsRead && message._id) {
+      onMarkAsRead(message._id);
+    }
+  }, [message._id, isCurrentUser, onMarkAsRead]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -16,6 +29,40 @@ const MessageBubble = ({ message, isCurrentUser, showSender = true }) => {
 
   const getMessageStatusIcon = () => {
     if (!isCurrentUser) return null;
+
+    const readCount = readReceipts.length;
+
+    if (readCount > 0) {
+      return (
+        <div className="inline-flex ml-1 items-center">
+          <svg
+            className="w-3 h-3 text-blue-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <svg
+            className="w-3 h-3 text-blue-300 -ml-1"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {readCount > 1 && (
+            <span className="text-xs ml-1 text-blue-200">{readCount}</span>
+          )}
+        </div>
+      );
+    }
 
     // Message status indicators (sent, delivered, read)
     return (
@@ -62,7 +109,16 @@ const MessageBubble = ({ message, isCurrentUser, showSender = true }) => {
 
           {/* Message Text */}
           <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {message.message}
+            {message.messageType === "file" ? (
+              <div className="flex items-center space-x-2">
+                <span>📄</span>
+                <span className="text-blue-600 underline cursor-pointer">
+                  {message.fileName || "File attachment"}
+                </span>
+              </div>
+            ) : (
+              message.message
+            )}
           </div>
 
           {/* Message Type Indicators */}

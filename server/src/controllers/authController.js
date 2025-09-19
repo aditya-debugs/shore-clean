@@ -94,4 +94,25 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, refreshAccessToken };
+const getProfile = async (req, res) => {
+  try {
+    // req.user is set by authMiddleware
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, logout, refreshAccessToken, getProfile };

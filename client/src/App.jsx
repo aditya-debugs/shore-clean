@@ -1,3 +1,14 @@
+import React from 'react';
+import { Route, Routes, BrowserRouter, Navigate, Link } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+
+// Import existing pages
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 flex items-center justify-center">
@@ -72,7 +83,7 @@ function App() {
           } />
           <Route path="/profile" element={
             <PrivateRoute>
-              <ComingSoon pageName="Profile" />
+              <Profile />
             </PrivateRoute>
           } />
           <Route path="/impact" element={<ComingSoon pageName="Impact" />} />

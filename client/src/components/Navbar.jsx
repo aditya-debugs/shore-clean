@@ -11,6 +11,7 @@ const Navbar = () => {
   
   const { currentUser, logout } = useAuth();
   const isAuthenticated = !!currentUser;
+  const isOrganizer = currentUser?.role === 'organizer';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,6 +20,13 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const scrollToTestimonials = () => {
+    const testimonialsSection = document.getElementById('testimonials');
+    if (testimonialsSection) {
+      testimonialsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <nav className={`fixed top-0 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
@@ -46,56 +54,58 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 {[
-                  { name: 'Events', path: '/events' }, 
-                  { name: 'Dashboard', path: '/dashboard' }, 
-                  { name: 'Impact', path: '/impact' }
+                  ...(isOrganizer ? [
+                    { name: 'Create Event', path: '/admin/create-event' },
+                    { name: 'Dashboard', path: '/admin/dashboard' }
+                  ] : [
+                    { name: 'Events', path: '/events' },
+                    { name: 'Testimonials', onClick: scrollToTestimonials }
+                  ])
                 ].map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group"
-                  >
-                    {item.name}
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
-                  </Link>
+                  item.onClick ? (
+                    <button
+                      key={item.name}
+                      onClick={item.onClick}
+                      className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group"
+                    >
+                      {item.name}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group"
+                    >
+                      {item.name}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
+                    </Link>
+                  )
                 ))}
-                {/* Donate Button (Secure Access) */}
-                <button
-                  onClick={() => navigate('/donations', { state: { fromNavbar: true } })}
-                  className="ml-4 px-6 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
-                >
-                  Donate
-                </button>
+                
+
+
                 {/* User Menu */}
                 <div className="relative ml-4">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-cyan-50 transition-all duration-300"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
+                    <User className="w-8 h-8 text-cyan-600" />
                     <span className="text-gray-700 font-medium">{currentUser?.name || 'User'}</span>
                   </button>
                   
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                       <Link
-                        to="/profile"
+                        to={isOrganizer ? "/admin/org-profile" : "/profile"}
                         className="flex items-center px-4 py-2 text-gray-700 hover:bg-cyan-50 transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="h-4 w-4 mr-3" />
                         Profile
                       </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-cyan-50 transition-colors"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <Settings className="h-4 w-4 mr-3" />
-                        Settings
-                      </Link>
+                      
                       <button
                         onClick={() => {
                           logout();
@@ -158,20 +168,39 @@ const Navbar = () => {
               {isAuthenticated ? (
                 <>
                   {[
-                    { name: 'Events', path: '/events' }, 
-                    { name: 'Dashboard', path: '/dashboard' }, 
-                    { name: 'Impact', path: '/impact' },
-                    { name: 'Profile', path: '/profile' }
+                    ...(isOrganizer ? [
+                      { name: 'Create Event', path: '/admin/create-event' },
+                      { name: 'Dashboard', path: '/admin/dashboard' },
+                      { name: 'Profile', path: '/admin/org-profile' }
+                    ] : [
+                      { name: 'Events', path: '/events' },
+                      { name: 'Testimonials', onClick: () => {
+                        setIsMenuOpen(false);
+                        scrollToTestimonials();
+                      }},
+                      { name: 'Profile', path: '/profile' }
+                    ])
                   ].map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
+                    item.onClick ? (
+                      <button
+                        key={item.name}
+                        onClick={item.onClick}
+                        className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 text-left w-full"
+                      >
+                        {item.name}
+                      </button>
+                    ) : (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    )
                   ))}
+
                   <button 
                     onClick={() => {
                       logout();
@@ -222,6 +251,4 @@ const Navbar = () => {
   );
 };
 
-
 export default Navbar;
-

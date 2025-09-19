@@ -87,4 +87,25 @@ const cancelRsvp = async (req, res) => {
   }
 };
 
-module.exports = { createEvent, updateEvent, getEvent, listEvents, rsvpEvent, cancelRsvp };
+// Delete Event
+const deleteEvent = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Optional: Check if user is the event creator (organizer)
+    if (event.organizer.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ message: 'Not authorized to delete this event' });
+    }
+
+    await event.deleteOne();
+    res.json({ message: 'Event deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { createEvent, updateEvent, getEvent, listEvents, rsvpEvent, cancelRsvp, deleteEvent };

@@ -77,22 +77,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post("/auth/register", userData);
       const { user, accessToken } = response.data;
-
-      // Normalize user object to always have _id for consistency
       const userWithToken = {
         ...user,
         _id: user._id || user.id,
         token: accessToken,
       };
-
-      // Save to localStorage and state
-      localStorage.setItem("user", JSON.stringify(userWithToken));
+      localStorage.setItem('user', JSON.stringify(userWithToken));
       setCurrentUser(userWithToken);
-
-      console.log(
-        "AuthContext: Registration successful, user set:",
-        userWithToken
-      );
       return { success: true };
     } catch (error) {
       console.error("Register error:", error.response?.data);
@@ -108,12 +99,33 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
+  const updateProfile = async (userData) => {
+    try {
+      const response = await api.put('/auth/profile', userData);
+      const { user } = response.data;
+      const userWithToken = {
+        ...user,
+        token: currentUser.token
+      };
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      setCurrentUser(userWithToken);
+      return { success: true };
+    } catch (error) {
+      console.error('Update profile error:', error.response?.data);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Profile update failed'
+      };
+    }
+  };
+
   const value = {
     currentUser,
     login,
     register,
     logout,
     loading,
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

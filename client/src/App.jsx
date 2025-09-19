@@ -1,4 +1,5 @@
 import React from "react";
+import DonationSuccess from './pages/DonationSuccess';
 import {
   Route,
   Routes,
@@ -33,7 +34,6 @@ const ComingSoon = ({ pageName }) => (
     </div>
   </div>
 );
-
 function ScrollToTop() {
   const { pathname } = useLocation();
   React.useEffect(() => {
@@ -53,6 +53,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/create-event" element={<CreateEvent />} />
+          <Route path="/donation-success" element={<DonationSuccess />} />
+          <Route path="/success" element={<DonationSuccess />} />
 
           {/* Protected Routes */}
           <Route

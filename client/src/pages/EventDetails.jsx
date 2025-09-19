@@ -32,48 +32,38 @@ const EventDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
+
   useEffect(() => {
-    const fetchEventAndComments = async () => {
-      if (!id) return;
-
-      setLoading(true);
-      setError("");
-
-      try {
-        // Fetch event data from API
-        const eventData = await getEventById(id);
-        setEvent(eventData);
-
-        // Fetch comments from API
-        const commentsRes = await fetch(`/api/comments/${id}`);
-        if (commentsRes.ok) {
-          const commentsData = await commentsRes.json();
-          setComments(commentsData);
-        }
-
-        // Load ratings from localStorage (since no backend implementation yet)
-        const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
-        if (ratings[id] && user?._id) {
-          const { userRatings } = ratings[id];
-          const userRating = userRatings[user._id] || 0;
-          setRating(userRating);
-
-          const values = Object.values(userRatings);
-          if (values.length > 0) {
-            const avg = values.reduce((a, b) => a + b, 0) / values.length;
-            setAvgRating(avg);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching event:", err);
-        setError("Failed to load event details");
-      } finally {
+    setLoading(true);
+    setError("");
+    // Fetch event details from MongoDB
+    fetch(`/api/events/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setEvent(data);
         setLoading(false);
-      }
-    };
-
-    fetchEventAndComments();
-  }, [id, user?._id]);
+      })
+      .catch(() => {
+        setError("Event not found.");
+        setLoading(false);
+      });
+    // Fetch comments from MongoDB
+    fetch(`/api/events/${id}/comments`)
+      .then(res => res.json())
+      .then(data => setComments(data))
+      .catch(() => setComments([]));
+    // Fetch ratings from MongoDB
+    fetch(`/api/events/${id}/ratings`)
+      .then(res => res.json())
+      .then(data => {
+        setRating(data.userRating || 0);
+        setAvgRating(data.avgRating || 0);
+      })
+      .catch(() => {
+        setRating(0);
+        setAvgRating(0);
+      });
+  }, [id]);
 
   const handleRSVP = async (alreadyRSVPed) => {
     if (!event || !user) return;
@@ -99,68 +89,49 @@ const EventDetails = () => {
     }
   };
 
-  const handleRatingChange = (newValue) => {
-    if (!user?._id) return;
 
+  const handleRatingChange = async (newValue) => {
     setRating(newValue);
-
-    const ratings = JSON.parse(localStorage.getItem("ratings")) || {};
-    if (!ratings[id]) ratings[id] = { userRatings: {} };
-    ratings[id].userRatings[user._id] = newValue;
-
-    const values = Object.values(ratings[id].userRatings);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    setAvgRating(avg);
-
-    localStorage.setItem("ratings", JSON.stringify(ratings));
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !user?._id) return;
-
     try {
-      const response = await fetch(`/api/comments/${id}`, {
+      const res = await fetch(`/api/events/${id}/ratings`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          text: newComment,
-          userId: user._id,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: newValue }),
       });
-
-      if (response.ok) {
-        const newCommentData = await response.json();
-        setComments((prev) => [...prev, newCommentData]);
-        setNewComment("");
-      } else {
-        alert("Failed to add comment. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      alert("Failed to add comment. Please try again.");
+      const data = await res.json();
+      setAvgRating(data.avgRating || newValue);
+    } catch {
+      // fallback: keep local rating
     }
   };
 
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    try {
+      const res = await fetch(`/api/events/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newComment }),
+      });
+      const data = await res.json();
+      setComments(data);
+      setNewComment("");
+    } catch {
+      // fallback: do nothing
+    }
+  };
+
+
   const handleDeleteComment = async (commentId) => {
     try {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      const res = await fetch(`/api/events/${id}/comments/${commentId}`, {
+        method: "DELETE"
       });
-
-      if (response.ok) {
-        setComments((prev) => prev.filter((c) => c._id !== commentId));
-      } else {
-        alert("Failed to delete comment. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      alert("Failed to delete comment. Please try again.");
+      const data = await res.json();
+      setComments(data);
+    } catch {
+      // fallback: do nothing
     }
   };
 

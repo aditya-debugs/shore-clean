@@ -5,15 +5,14 @@ import { useAuth } from "../../context/AuthContext";
 import emailjs from "@emailjs/browser";
 
 const initialState = {
-  title: "",
-  description: "",
-  location: "",
-  startDate: "",
-  endDate: "",
-  capacity: "",
-  organizer: "",
-  bannerUrl: "",
-  tags: "",
+	title: "",
+	description: "",
+	location: "",
+	startDate: "",
+	endDate: "",
+	capacity: "",
+	bannerUrl: "",
+	tags: "",
 };
 
 const BACKEND_URL = "http://localhost:8001/ai"; // FastAPI AI server
@@ -28,13 +27,35 @@ const CreateEvent = () => {
   const [eventId, setEventId] = useState(null);
   const { currentUser } = useAuth();
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const editId = params.get("edit");
-    if (editId) {
-      setIsEdit(true);
-      setEventId(editId);
-      setLoading(true);
+
+	useEffect(() => {
+		const params = new URLSearchParams(location.search);
+		const editId = params.get("edit");
+		if (editId) {
+			setIsEdit(true);
+			setEventId(editId);
+			setLoading(true);
+			fetch(`/api/events/${editId}`)
+				.then(res => res.json())
+				.then(data => {
+					setForm({
+						title: data.title || "",
+						description: data.description || "",
+						location: data.location || "",
+						startDate: data.startDate ? new Date(data.startDate).toISOString().slice(0,16) : "",
+						endDate: data.endDate ? new Date(data.endDate).toISOString().slice(0,16) : "",
+						capacity: data.capacity ? String(data.capacity) : "",
+						bannerUrl: data.bannerUrl || "",
+						tags: Array.isArray(data.tags) ? data.tags.join(",") : data.tags || "",
+					});
+					setLoading(false);
+				})
+				.catch(() => {
+					setError("Event not found for editing.");
+					setLoading(false);
+				});
+		}
+	}, [location.search]);
 
       // Fetch event from database instead of localStorage
       const fetchEvent = async () => {
@@ -65,40 +86,70 @@ const CreateEvent = () => {
         }
       };
 
-      fetchEvent();
-    }
-  }, [location.search]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		setLoading(true);
+		setError("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if (!currentUser) {
-      setError("You must be logged in to create an event");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const eventData = {
-        title: form.title,
-        description: form.description,
-        location: form.location,
-        startDate: new Date(form.startDate),
-        endDate: new Date(form.endDate),
-        capacity: form.capacity ? parseInt(form.capacity) : undefined,
-        bannerUrl: form.bannerUrl,
-        tags: form.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-      };
+		// Validate required fields before submit
+		if (!form.title || !form.startDate) {
+			setError("Title and Start Date are required.");
+			setLoading(false);
+			return;
+		}
+		try {
+			const eventData = {
+				...form,
+				startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+				tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+				capacity: form.capacity ? parseInt(form.capacity) : undefined,
+			};
+			const token = localStorage.getItem("token");
+			let response;
+			if (isEdit && eventId) {
+				response = await fetch(`/api/events/${eventId}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${token}`,
+					},
+					body: JSON.stringify(eventData),
+				});
+			} else {
+				response = await fetch(`/api/events`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${token}`,
+					},
+					body: JSON.stringify(eventData),
+				});
+			}
+			const result = await response.json();
+			if (!response.ok) {
+				if (result.details) {
+					// Show backend validation errors
+					setError(Object.values(result.details).map(e => e.message).join("; "));
+				} else {
+					setError(result.message || (isEdit ? "Error updating event" : "Error creating event"));
+				}
+				setLoading(false);
+				return;
+			}
+			// 🔹 Trigger email notification only for new events
+			if (!isEdit) {
+				await notifyUsers(eventData.title);
+			}
+			navigate("/events");
+		} catch (err) {
+			setError(isEdit ? "Error updating event" : "Error creating event");
+			console.error(err);
+		} finally {
+			setLoading(false);
+		}
+	};
 
       let result;
       if (isEdit && eventId) {
@@ -193,21 +244,21 @@ const CreateEvent = () => {
             />
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              required
-              rows={4}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              placeholder="Event Description"
-            />
-          </div>
+					{/* Capacity & Organizer */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+							<input
+								type="number"
+								name="capacity"
+								value={form.capacity}
+								onChange={handleChange}
+								min="1"
+								className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+								placeholder="Max Attendees"
+							/>
+						</div>
+					</div>
 
           {/* Location */}
           <div>

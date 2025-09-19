@@ -23,30 +23,24 @@ const Events = () => {
   const [error, setError] = useState("");
   const { currentUser } = useAuth();
 
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await getEvents({ page, limit });
-        setEvents(response.events || []);
-        setTotalPages(
-          Math.max(
-            1,
-            Math.ceil((response.total || response.events?.length || 0) / limit)
-          )
-        );
-      } catch (err) {
-        console.error("Error fetching events:", err);
-        setError("Failed to load events. Please try again later.");
-        setEvents([]);
-      } finally {
+    setLoading(true);
+    setError("");
+    fetch(`${EVENTS_API}?page=${page}&limit=${limit}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch events");
+        return res.json();
+      })
+      .then((data) => {
+        setEvents(data.events || []);
+        setTotalPages(data.totalPages || 1);
         setLoading(false);
-      }
-    };
-
-    fetchEvents();
+      })
+      .catch((err) => {
+        setError("Could not load events. Please try again later.");
+        setLoading(false);
+      });
   }, [page, limit]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
@@ -56,20 +50,15 @@ const Events = () => {
     }
 
     try {
-      const endpoint = alreadyRSVPed
-        ? `/api/events/${eventId}/cancel-rsvp`
-        : `/api/events/${eventId}/rsvp`;
+      const token = localStorage.getItem("token");
+      const endpoint = alreadyRSVPed ? `${EVENTS_API}/${eventId}/cancel-rsvp` : `${EVENTS_API}/${eventId}/rsvp`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${currentUser.token}`,
-          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
       });
-
-      if (!res.ok)
-        throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
-
+      if (!res.ok) throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
       const result = await res.json();
 
       // Update the local state with the new attendees list

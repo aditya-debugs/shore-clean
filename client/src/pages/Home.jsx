@@ -39,137 +39,134 @@ const Home = () => {
   const isAuthenticated = !!currentUser;
 
   useEffect(() => {
-    setTimeout(() => {
-      // Quotes
-      setQuotes([
-        {
-          text: "Together, we can turn the tide against ocean pollution.",
-          author: "ShoreClean Team",
-        },
-        {
-          text: "Every small action counts towards a cleaner coastline.",
-          author: "Volunteer",
-        },
-        {
-          text: "Protecting our beaches is protecting our future.",
-          author: "Unknown",
-        },
-      ]);
-      // Carousel slides
-      setCarouselSlides([
-        {
-          title: "Join the Coastal Cleanup Movement",
-          description:
-            "Be part of the solution to protect our oceans and beaches from pollution.",
-          bgImage:
-            "https://images.pexels.com/photos/9034686/pexels-photo-9034686.jpeg",
-          quoteIndex: 0,
-        },
-        {
-          title: "Track Your Environmental Impact",
-          description:
-            "See real-time data on how your efforts contribute to cleaner coastlines.",
-          bgImage:
-            "https://images.pexels.com/photos/9034669/pexels-photo-9034669.jpeg",
-          quoteIndex: 1,
-        },
-        {
-          title: "Make a Lasting Impact",
-          description:
-            "Join thousands of volunteers making our coastlines cleaner and safer.",
-          bgImage:
-            "https://images.pexels.com/photos/13178207/pexels-photo-13178207.jpeg",
-          quoteIndex: 2,
-        },
-      ]);
-      // Testimonials
-      setTestimonials([
-        {
-          id: 1,
-          name: "Priya Sharma",
-          role: "Environmental Activist",
-          image:
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-          text: "ShoreClean has revolutionized how we organize cleanup drives. The AI-powered coordination and real-time tracking have increased our volunteer participation by 300%.",
-          rating: 5,
-        },
-        {
-          id: 2,
-          name: "Arjun Patel",
-          role: "Volunteer Coordinator",
-          image:
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-          text: "The gamification features keep volunteers engaged and motivated. Our regular participants have grown from 20 to over 200 in just six months!",
-          rating: 5,
-        },
-        {
-          id: 3,
-          name: "Dr. Meera Krishnan",
-          role: "Marine Biologist",
-          image:
-            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
-          text: "The impact tracking and analytics help us measure our environmental progress scientifically. It's incredibly valuable for our research and reporting.",
-          rating: 5,
-        },
-      ]);
-      // Features
-      setFeatures([
-        {
-          icon: Users,
-          title: "Role-Based Access",
-          description:
-            "Separate dashboards for organizers and volunteers with tailored experiences.",
-          gradient: "from-blue-400 to-cyan-400",
-        },
-        {
-          icon: Calendar,
-          title: "Smart Event Management",
-          description:
-            "Create, edit, and track events with QR-based attendance and real-time updates.",
-          gradient: "from-cyan-400 to-teal-400",
-        },
-        {
-          icon: Sparkles,
-          title: "AI-Powered Content",
-          description:
-            "Automated flyer generation and multilingual chatbot support for better engagement.",
-          gradient: "from-teal-400 to-green-400",
-        },
-        {
-          icon: Trophy,
-          title: "Gamified Rewards",
-          description:
-            "Earn badges, certificates, and rewards while making a real environmental impact.",
-          gradient: "from-green-400 to-emerald-400",
-        },
-        {
-          icon: Shield,
-          title: "Impact Tracking",
-          description:
-            "Real-time analytics dashboard with comprehensive impact measurement and reporting.",
-          gradient: "from-purple-400 to-indigo-400",
-        },
-        {
-          icon: Globe,
-          title: "CSR Integration",
-          description:
-            "Seamless donation management with 80G tax benefits and corporate partnerships.",
-          gradient: "from-indigo-400 to-blue-400",
-        },
-      ]);
-
-      // Load events from API
-      getEvents({ page: 1, limit: 3 })
-        .then((eventsData) => {
-          setUpcomingEvents(eventsData.events || []);
-        })
-        .catch((error) => {
-          console.error("Error loading events for home page:", error);
-          setUpcomingEvents([]);
-        });
-
-      setLoading(false);
-    }, 1000);
+    // Quotes
+    setQuotes([
+      {
+        text: "Together, we can turn the tide against ocean pollution.",
+        author: "ShoreClean Team",
+      },
+      {
+        text: "Every small action counts towards a cleaner coastline.",
+        author: "Volunteer",
+      },
+      {
+        text: "Protecting our beaches is protecting our future.",
+        author: "Unknown",
+      },
+    ]);
+    // Carousel slides
+    setCarouselSlides([
+      {
+        title: "Join the Coastal Cleanup Movement",
+        description:
+          "Be part of the solution to protect our oceans and beaches from pollution.",
+        bgImage:
+          "https://images.pexels.com/photos/9034686/pexels-photo-9034686.jpeg",
+        quoteIndex: 0,
+      },
+      {
+        title: "Track Your Environmental Impact",
+        description:
+          "See real-time data on how your efforts contribute to cleaner coastlines.",
+        bgImage:
+          "https://images.pexels.com/photos/9034669/pexels-photo-9034669.jpeg",
+        quoteIndex: 1,
+      },
+      {
+        title: "Make a Lasting Impact",
+        description:
+          "Join thousands of volunteers making our coastlines cleaner and safer.",
+        bgImage:
+          "https://images.pexels.com/photos/13178207/pexels-photo-13178207.jpeg",
+        quoteIndex: 2,
+      },
+    ]);
+    // Testimonials
+    setTestimonials([
+      {
+        id: 1,
+        name: "Priya Sharma",
+        role: "Environmental Activist",
+        image:
+          "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+        text: "ShoreClean has revolutionized how we organize cleanup drives. The AI-powered coordination and real-time tracking have increased our volunteer participation by 300%.",
+        rating: 5,
+      },
+      {
+        id: 2,
+        name: "Arjun Patel",
+        role: "Volunteer Coordinator",
+        image:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+        text: "The gamification features keep volunteers engaged and motivated. Our regular participants have grown from 20 to over 200 in just six months!",
+        rating: 5,
+      },
+      {
+        id: 3,
+        name: "Dr. Meera Krishnan",
+        role: "Marine Biologist",
+        image:
+          "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
+        text: "The impact tracking and analytics help us measure our environmental progress scientifically. It's incredibly valuable for our research and reporting.",
+        rating: 5,
+      },
+    ]);
+    // Features
+    setFeatures([
+      {
+        icon: Users,
+        title: "Role-Based Access",
+        description:
+          "Separate dashboards for organizers and volunteers with tailored experiences.",
+        gradient: "from-blue-400 to-cyan-400",
+      },
+      {
+        icon: Calendar,
+        title: "Smart Event Management",
+        description:
+          "Create, edit, and track events with QR-based attendance and real-time updates.",
+        gradient: "from-cyan-400 to-teal-400",
+      },
+      {
+        icon: Sparkles,
+        title: "AI-Powered Content",
+        description:
+          "Automated flyer generation and multilingual chatbot support for better engagement.",
+        gradient: "from-teal-400 to-green-400",
+      },
+      {
+        icon: Trophy,
+        title: "Gamified Rewards",
+        description:
+          "Earn badges, certificates, and rewards while making a real environmental impact.",
+        gradient: "from-green-400 to-emerald-400",
+      },
+      {
+        icon: Shield,
+        title: "Impact Tracking",
+        description:
+          "Real-time analytics dashboard with comprehensive impact measurement and reporting.",
+        gradient: "from-purple-400 to-indigo-400",
+      },
+      {
+        icon: Globe,
+        title: "CSR Integration",
+        description:
+          "Seamless donation management with 80G tax benefits and corporate partnerships.",
+        gradient: "from-indigo-400 to-blue-400",
+      },
+    ]);
+    // Fetch events from MongoDB API
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        setUpcomingEvents(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setUpcomingEvents([]);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {

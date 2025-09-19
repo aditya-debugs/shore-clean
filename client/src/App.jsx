@@ -1,9 +1,9 @@
 // App.jsx - Updated main app component with routing to chat
 import { useState } from "react";
-import ChatCommunity from "./pages/ChatCommunity";import { Route, Routes, BrowserRouter } from 'react-router-dom';
-import Home from './pages/Home'
-import Events from './pages/Events'
-import EventDetails from './pages/EventDetails'
+import ChatCommunity from "./pages/ChatCommunity";
+import Home from './pages/Home';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
 
@@ -102,38 +102,6 @@ function App() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="App">
-      {currentPage === "chat" && (
-        <div className="fixed top-4 left-4 z-50">
-          <button
-            onClick={() => setCurrentPage("home")}
-            className="px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white shadow-sm border border-gray-200 transition-colors flex items-center space-x-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            <span>Home</span>
-          </button>
-        </div>
-      )}
-      {renderPage()}
-    </div>
-  );
-}
-
-export default App;
-=======
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -145,4 +113,3 @@ export default App;
 }
 
 export default App
->>>>>>> b03850d3bac081d658221a295117b072d821be81

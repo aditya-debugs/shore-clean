@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Calendar, Users, MapPin, Loader, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -105,9 +106,10 @@ const Events = () => {
           {!loading && !error && events.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {events.map((event, idx) => (
-                <div
+                <Link
+                  to={`/events/${event._id}`}
                   key={event._id}
-                  className="bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in"
+                  className="bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in block"
                   style={{ animationDelay: `${idx * 80}ms` }}
                 >
                   <div
@@ -138,26 +140,9 @@ const Events = () => {
                         </div>
                         <div className="text-xs text-gray-500">by {event.organizer?.name || "Organizer"}</div>
                       </div>
-                      {userId && (
-                        event.attendees?.includes(userId) ? (
-                          <button
-                            className="w-full mt-4 px-4 py-2 bg-cyan-100 text-cyan-600 rounded-lg border border-cyan-300 font-medium cursor-pointer opacity-80 hover:bg-cyan-200 transition-all duration-300 shadow-md"
-                            onClick={() => handleRSVP(event._id, true)}
-                          >
-                            Cancel RSVP
-                          </button>
-                        ) : (
-                          <button
-                            className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-all duration-300 font-medium cursor-pointer shadow-md"
-                            onClick={() => handleRSVP(event._id, false)}
-                          >
-                            RSVP
-                          </button>
-                        )
-                      )}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

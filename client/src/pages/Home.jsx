@@ -7,7 +7,6 @@ import Footer from '../components/Footer';
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentQuote, setCurrentQuote] = useState(0);
   const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState([]);
   const [carouselSlides, setCarouselSlides] = useState([]);
@@ -50,22 +49,84 @@ const Home = () => {
             {
               title: "Join the Coastal Cleanup Movement",
               description: "Be part of the solution to protect our oceans and beaches from pollution.",
-              bgImage: "https://images.unsplash.com/photo-1536152470836-b943b246224c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1630&q=80"
+              bgImage: "https://images.pexels.com/photos/9034686/pexels-photo-9034686.jpeg",
+              quoteIndex: 0
             },
             {
               title: "Track Your Environmental Impact",
               description: "See real-time data on how your efforts contribute to cleaner coastlines.",
-              bgImage: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1526&q=80"
+              bgImage: "https://images.pexels.com/photos/9034669/pexels-photo-9034669.jpeg",
+              quoteIndex: 1
             },
             {
-              title: "Earn Rewards While Making a Difference",
-              description: "Get recognized for your contributions with our gamified reward system.",
-              bgImage: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80"
+              title: "Make a Lasting Impact",
+              description: "Join thousands of volunteers making our coastlines cleaner and safer.",
+              bgImage: "https://images.pexels.com/photos/13178207/pexels-photo-13178207.jpeg",
+              quoteIndex: 2
             }
           ]);
           
-          setUpcomingEvents([]);
-          setTestimonials([]);
+          // Demo events data
+          setUpcomingEvents([
+            {
+              id: 1,
+              title: "Marine Beach Cleanup Drive",
+              date: "2023-10-28",
+              time: "08:00 AM",
+              location: "Marine Drive, Mumbai",
+              participants: 42,
+              image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+              organizer: "Mumbai Coastal Guardians"
+            },
+            {
+              id: 2,
+              title: "Juhu Beach Restoration",
+              date: "2023-11-05",
+              time: "07:30 AM",
+              location: "Juhu Beach, Mumbai",
+              participants: 35,
+              image: "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+              organizer: "Beach Warriors Collective"
+            },
+            {
+              id: 3,
+              title: "Versova Coastal Conservation",
+              date: "2023-11-12",
+              time: "09:00 AM",
+              location: "Versova Beach, Mumbai",
+              participants: 28,
+              image: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+              organizer: "Ocean Preservation Society"
+            }
+          ]);
+          
+          // Demo testimonials data
+          setTestimonials([
+            {
+              id: 1,
+              name: "Priya Sharma",
+              role: "Environmental Activist",
+              image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+              text: "ShoreClean has revolutionized how we organize cleanup drives. The AI-powered coordination and real-time tracking have increased our volunteer participation by 300%.",
+              rating: 5
+            },
+            {
+              id: 2,
+              name: "Arjun Patel",
+              role: "Volunteer Coordinator",
+              image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+              text: "The gamification features keep volunteers engaged and motivated. Our regular participants have grown from 20 to over 200 in just six months!",
+              rating: 5
+            },
+            {
+              id: 3,
+              name: "Dr. Meera Krishnan",
+              role: "Marine Biologist",
+              image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
+              text: "The impact tracking and analytics help us measure our environmental progress scientifically. It's incredibly valuable for our research and reporting.",
+              rating: 5
+            }
+          ]);
           
           setFeatures([
             {
@@ -121,19 +182,10 @@ const Home = () => {
     if (carouselSlides.length > 0) {
       const interval = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [carouselSlides]);
-
-  useEffect(() => {
-    if (quotes.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentQuote((prev) => (prev + 1) % quotes.length);
       }, 6000);
       return () => clearInterval(interval);
     }
-  }, [quotes]);
+  }, [carouselSlides]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
@@ -169,19 +221,22 @@ const Home = () => {
       {/* Hero Section with Background Carousel */}
       <section className="pt-32 pb-20 px-6 relative overflow-hidden min-h-screen flex items-center">
         {/* Background Carousel */}
-        <div className="absolute inset-0 z-0">
-          {carouselSlides.map((slide, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 bg-cover bg-center ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{ 
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${slide.bgImage})` 
-              }}
-            ></div>
-          ))}
-        </div>
+<div className="absolute inset-0 z-0">
+  {carouselSlides.map((slide, index) => (
+    <div
+      key={index}
+      className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+        index === currentSlide 
+          ? 'opacity-100 pointer-events-auto' 
+          : 'opacity-0 pointer-events-none'
+      }`}
+      style={{ 
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${slide.bgImage})`,
+      }}
+    ></div>
+  ))}
+</div>
+
         
         <div className="max-w-6xl mx-auto relative z-10 text-center text-white">
           {isAuthenticated ? (
@@ -219,13 +274,17 @@ const Home = () => {
             {quotes.map((quote, index) => (
               <div
                 key={index}
-                className={`transition-opacity duration-1000 text-center ${
-                  index === currentQuote ? 'opacity-100' : 'opacity-0 absolute'
+                className={`transition-all duration-1000 text-center ${
+                  carouselSlides[currentSlide]?.quoteIndex === index 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-0 translate-y-4 absolute'
                 }`}
               >
-                <Quote className="h-8 w-8 mx-auto mb-4 text-cyan-200 opacity-80" />
-                <p className="text-xl italic mb-4 text-white/95">"{quote.text}"</p>
-                <p className="text-cyan-200 font-medium">— {quote.author}</p>
+                <div className="border-5 border-cyan-300/70 rounded-xl bg-black/30 p-6 shadow-lg backdrop-blur-md inline-block transition-all duration-700">
+                  <Quote className="h-8 w-8 mx-auto mb-4 text-cyan-200 opacity-80" />
+                  <p className="text-xl italic mb-4 text-white/95">"{quote.text}"</p>
+                  <p className="text-cyan-200 font-medium">— {quote.author}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -288,11 +347,16 @@ const Home = () => {
               {upcomingEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-100"
+                  className="bg-white rounded-xl shadow-sm transition-all duration-300 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-xl hover:border-cyan-300"
                 >
+                  <div 
+                    className="h-48 bg-cover bg-center relative"
+                    style={{ backgroundImage: `url(${event.image})` }}
+                  >
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300"></div>
+                  </div>
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-4xl">{event.image}</div>
                       <div className="text-right">
                         <div className="text-sm text-gray-500">
                           {formatDate(event.date)}
@@ -411,8 +475,20 @@ const Home = () => {
               {testimonials.map((testimonial) => (
                 <div
                   key={testimonial.id}
-                  className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
+                  className="bg-white p-8 rounded-xl shadow-sm transition-all duration-300 border border-gray-100 transform hover:scale-105 hover:shadow-xl hover:border-cyan-300"
                 >
+                  <div className="flex items-center mb-6">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="w-16 h-16 rounded-full object-cover mr-4"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{testimonial.name}</h4>
+                      <p className="text-cyan-500 text-sm">{testimonial.role}</p>
+                    </div>
+                  </div>
+                  
                   <div className="flex items-center mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 text-amber-400 fill-current" />
@@ -422,14 +498,6 @@ const Home = () => {
                   <p className="text-gray-600 mb-6 leading-relaxed italic">
                     "{testimonial.text}"
                   </p>
-                  
-                  <div className="flex items-center">
-                    <div className="text-3xl mr-4">{testimonial.image}</div>
-                    <div>
-                      <h4 className="font-semibold text-gray-800">{testimonial.name}</h4>
-                      <p className="text-cyan-500 text-sm">{testimonial.role}</p>
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>

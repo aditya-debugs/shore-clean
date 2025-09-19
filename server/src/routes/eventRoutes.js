@@ -3,14 +3,26 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middlewares/authMiddleware');
 const {
-  createEvent, updateEvent, getEvent, listEvents, rsvpEvent, cancelRsvp
+  createEvent,
+  updateEvent,
+  deleteEvent,   // 👈 Add delete controller
+  getEvent,
+  listEvents,
+  rsvpEvent,
+  cancelRsvp
 } = require('../controllers/eventController');
 
+// Public Routes
 router.get('/', listEvents);
-router.post('/', protect, createEvent); // organizer or admin can create
 router.get('/:id', getEvent);
-router.put('/:id', protect, updateEvent);
-router.post('/:id/rsvp', protect, rsvpEvent);
-router.post('/:id/cancel-rsvp', protect, cancelRsvp);
+
+// Organizer/Admin Routes
+router.post('/', protect, authorize('organizer', 'admin'), createEvent);
+router.put('/:id', protect, authorize('organizer', 'admin'), updateEvent);
+router.delete('/:id', protect, authorize('organizer', 'admin'), deleteEvent); 
+
+// Volunteer Routes
+router.post('/:id/rsvp', protect, authorize('volunteer', 'organizer', 'admin'), rsvpEvent);
+router.post('/:id/cancel-rsvp', protect, authorize('volunteer', 'organizer', 'admin'), cancelRsvp);
 
 module.exports = router;

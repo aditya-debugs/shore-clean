@@ -32,7 +32,7 @@ export default function Donations() {
       });
 
       // 2️⃣ Call Stripe server to start checkout session
-      const response = await axios.post('http://localhost:8000/api/donations', {
+      const response = await axios.post('http://localhost:8000/donations', {
         amount: Number(form.amount),
         name: form.name,
         email: form.email

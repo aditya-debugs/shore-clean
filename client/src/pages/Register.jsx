@@ -18,7 +18,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    role: "user",
+    role: "org", // Changed default role to "org" since this is the organizer registration
   });
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
@@ -300,8 +300,8 @@ const Register = () => {
                   className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 bg-white"
                   disabled={loading}
                 >
-                  <option value="org">Organizer</option>
-                  <option value="user">Volunteer</option>
+                  <option value="org">Organization Account</option>
+                  <option value="user">Volunteer Account</option>
                 </select>
               </div>
 

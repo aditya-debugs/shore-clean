@@ -10,6 +10,7 @@ import {
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
+import EventManagement from "./pages/EventManagement";
 import CreateEvent from "./pages/admin/CreateEvent";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -78,6 +79,14 @@ function App() {
             element={
               <PrivateRoute>
                 <EventDetails />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/events/:id/manage"
+            element={
+              <PrivateRoute>
+                <EventManagement />
               </PrivateRoute>
             }
           />

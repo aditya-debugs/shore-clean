@@ -96,7 +96,52 @@ export const deleteEvent = async (id) => {
 // Registration API functions
 export const registerForEvent = async (eventId) => {
   try {
-    const response = await api.post("/registrations", { eventId });
+    const response = await api.post(`/registrations/${eventId}/register`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRegistrationStatus = async (eventId) => {
+  try {
+    const response = await api.get(`/registrations/${eventId}/status`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getEventRegistrations = async (eventId) => {
+  try {
+    const response = await api.get(`/registrations/${eventId}/registrations`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const cancelRegistration = async (eventId) => {
+  try {
+    const response = await api.delete(`/registrations/${eventId}/cancel`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const checkInVolunteer = async (qrCode) => {
+  try {
+    const response = await api.post(`/registrations/checkin-qr`, { qrCode });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const checkOutVolunteer = async (qrCode) => {
+  try {
+    const response = await api.post(`/registrations/checkout-qr`, { qrCode });
     return response.data;
   } catch (error) {
     throw error;

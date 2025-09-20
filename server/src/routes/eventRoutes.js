@@ -25,4 +25,9 @@ router.delete('/:id', protect, authorize('organizer', 'admin', 'org'), deleteEve
 router.post('/:id/rsvp', protect, authorize('volunteer', 'organizer', 'admin', 'org'), rsvpEvent);
 router.post('/:id/cancel-rsvp', protect, authorize('volunteer', 'organizer', 'admin', 'org'), cancelRsvp);
 
+// Ratings endpoint (placeholder for now)
+router.get('/:id/ratings', (req, res) => {
+  res.json({ userRating: 0, avgRating: 0 });
+});
+
 module.exports = router;

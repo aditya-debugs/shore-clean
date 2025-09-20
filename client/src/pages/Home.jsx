@@ -156,7 +156,7 @@ const Home = () => {
         gradient: "from-indigo-400 to-blue-400",
       },
     ]);
-    
+
     // Fetch events from MongoDB API
     const fetchEvents = async () => {
       try {
@@ -169,7 +169,7 @@ const Home = () => {
         setLoading(false);
       }
     };
-    
+
     fetchEvents();
   }, []);
 

@@ -45,11 +45,13 @@ const Organization = () => {
     try {
       // First try to get organization profile
       const orgResponse = await api.get(`/organizations/profile/${id}`);
+      console.log("Organization profile response:", orgResponse.data);
       setOrganization(orgResponse.data);
     } catch (err) {
       // If no organization profile, try getting user data
       try {
         const userResponse = await api.get(`/auth/user/${id}`);
+        console.log("User response:", userResponse.data);
         setOrganization(userResponse.data);
       } catch (userErr) {
         setError("Failed to load organization details");
@@ -60,14 +62,17 @@ const Organization = () => {
 
   const fetchOrganizationEvents = async () => {
     try {
+      console.log("Fetching events for organization ID:", id);
       const response = await api.get(`/events?organizer=${id}`);
       console.log("Events API response:", response.data);
-      // Ensure response.data is an array
-      const eventsData = Array.isArray(response.data) ? response.data : [];
+      // Handle the API response structure { page, limit, events }
+      const eventsData = response.data.events || [];
       console.log("Events data after processing:", eventsData);
+      console.log("Number of events found:", eventsData.length);
       setEvents(eventsData);
     } catch (err) {
       console.error("Error fetching organization events:", err);
+      console.error("Error details:", err.response?.data);
       // Set empty array on error to prevent map errors
       setEvents([]);
     } finally {
@@ -568,39 +573,85 @@ const Organization = () => {
                 )}
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(events || []).map((event) => (
-                  <Link
-                    key={event._id}
-                    to={`/events/${event._id}`}
-                    className="block bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 hover:from-gray-100 hover:to-blue-100 transition-all duration-300 border border-gray-100 hover:shadow-lg transform hover:-translate-y-1"
-                  >
-                    <h3 className="font-bold text-gray-800 mb-3 text-lg line-clamp-2">
-                      {event.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {event.description}
-                    </p>
-
-                    <div className="space-y-2 text-sm text-gray-500">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-cyan-500" />
-                        <span>{new Date(event.date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-cyan-500" />
-                        <span className="line-clamp-1">{event.location}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-cyan-500" />
-                        <span>
-                          {event.registrations?.length || 0} participants
-                        </span>
-                      </div>
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {(events || []).slice(0, 3).map((event, idx) => (
+                    <div key={event._id} className="relative">
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in block"
+                        style={{ animationDelay: `${idx * 80}ms` }}
+                      >
+                        <div
+                          className="h-32 bg-cover bg-center relative"
+                          style={{
+                            backgroundImage: `url(${
+                              event.bannerUrl ||
+                              "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80"
+                            })`,
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
+                          <div className="absolute top-2 right-2 bg-white/80 rounded-full px-3 py-1 text-xs font-semibold text-cyan-600 shadow-md backdrop-blur">
+                            {new Date(
+                              event.startDate || event.date
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                        </div>
+                        <div className="p-4 flex flex-col justify-between min-h-[180px]">
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-2 tracking-tight line-clamp-2">
+                              {event.title}
+                            </h3>
+                            <p className="text-gray-600 mb-3 line-clamp-2 text-sm min-h-[2.5em]">
+                              {event.description}
+                            </p>
+                            <div className="flex items-center text-gray-600 mb-3">
+                              <MapPin className="h-4 w-4 mr-2" />
+                              <span className="text-sm font-medium line-clamp-1">
+                                {event.location}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-cyan-500">
+                                <Users className="h-4 w-4 mr-1" />
+                                <span className="text-sm font-medium">
+                                  {event.attendees?.length ||
+                                    event.registrations?.length ||
+                                    0}{" "}
+                                  joined
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                by {event.organizer?.name || "Organizer"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
                     </div>
-                  </Link>
-                ))}
-              </div>
+                  ))}
+                </div>
+
+                {/* View All Events Button - Show if there are more than 3 events */}
+                {events.length > 3 && (
+                  <div className="text-center mt-8">
+                    <Link
+                      to={`/events?organizer=${id}`}
+                      className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                      <Calendar className="h-5 w-5 mr-3" />
+                      View All Events ({events.length})
+                      <ExternalLink className="h-4 w-4 ml-2" />
+                    </Link>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

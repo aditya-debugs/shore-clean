@@ -112,6 +112,25 @@ export const getMyRegistrations = async () => {
   }
 };
 
+// RSVP API functions
+export const rsvpForEvent = async (eventId) => {
+  try {
+    const response = await api.post(`/events/${eventId}/rsvp`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const cancelRsvpForEvent = async (eventId) => {
+  try {
+    const response = await api.post(`/events/${eventId}/cancel-rsvp`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Donation API functions
 export const createDonation = async (donationData) => {
   try {

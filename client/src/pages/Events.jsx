@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getEvents } from "../utils/api";
+import { getEvents, rsvpForEvent, cancelRsvpForEvent } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -23,24 +23,22 @@ const Events = () => {
   const [error, setError] = useState("");
   const { currentUser } = useAuth();
 
-
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    fetch(`${EVENTS_API}?page=${page}&limit=${limit}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch events");
-        return res.json();
-      })
-      .then((data) => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getEvents({ page, limit });
         setEvents(data.events || []);
         setTotalPages(data.totalPages || 1);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         setError("Could not load events. Please try again later.");
         setLoading(false);
-      });
+      }
+    };
+
+    fetchEvents();
   }, [page, limit]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
@@ -50,16 +48,9 @@ const Events = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const endpoint = alreadyRSVPed ? `${EVENTS_API}/${eventId}/cancel-rsvp` : `${EVENTS_API}/${eventId}/rsvp`;
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) throw new Error(alreadyRSVPed ? "Cancel RSVP failed" : "RSVP failed");
-      const result = await res.json();
+      const result = alreadyRSVPed
+        ? await cancelRsvpForEvent(eventId)
+        : await rsvpForEvent(eventId);
 
       // Update the local state with the new attendees list
       setEvents((evts) =>
@@ -194,7 +185,7 @@ const Events = () => {
           {!loading && !error && totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mb-8">
               <button
-                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-100 hover:border-cyan-300 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
@@ -204,7 +195,7 @@ const Events = () => {
                 Page {page} of {totalPages}
               </span>
               <button
-                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                className="p-2 rounded-full bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-100 hover:border-cyan-300 hover:scale-105 hover:shadow-2xl transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
               >

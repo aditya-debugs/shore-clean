@@ -75,11 +75,8 @@ app.use("/api/comments", commentRoutes);
 app.use("/api", ratingRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/groups", groupRoutes);
-// Organization profile routes
-const organizationRoutes = require("./routes/organizationRoutes");
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/communities", communityRoutes);
-app.use("/api/organizations", organizationRoutes);
 
 // Initialize Socket.io handlers for real-time chat
 initializeSocketHandlers(io);

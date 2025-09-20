@@ -1,30 +1,30 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn, Loader, AlertCircle, Waves } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, LogIn, Loader, AlertCircle, Waves } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    
+
     // Validate required fields
     const newErrors = {};
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-    
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -33,9 +33,14 @@ const Login = () => {
     setLoading(true);
     const result = await login(formData);
     setLoading(false);
-    
+
     if (result.success) {
-      navigate('/', { replace: true });
+      // Check if organization needs to complete profile
+      if (result.needsProfileCompletion) {
+        navigate("/organization-details", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } else {
       setErrors({ general: result.error });
     }
@@ -43,32 +48,31 @@ const Login = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-      
       {/* Hero Background Section */}
       <div className="pt-32 pb-20 relative overflow-hidden">
         {/* Background with ocean theme */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1505142468610-359e7d316be0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1926&q=80')` 
+          style={{
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1505142468610-359e7d316be0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1926&q=80')`,
           }}
         />
-        
+
         <div className="relative z-10 max-w-md mx-auto px-6">
           {/* Login Form Card */}
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
@@ -79,8 +83,12 @@ const Login = () => {
                   <Waves className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-              <p className="text-gray-600">Sign in to continue your coastal cleanup journey</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                Welcome Back
+              </h1>
+              <p className="text-gray-600">
+                Sign in to continue your coastal cleanup journey
+              </p>
             </div>
 
             {/* Error Message */}
@@ -95,7 +103,10 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Email Address
                 </label>
                 <div className="relative">
@@ -109,9 +120,9 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.email 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                      errors.email
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
                     }`}
                     placeholder="Enter your email"
                     disabled={loading}
@@ -124,7 +135,10 @@ const Login = () => {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -138,9 +152,9 @@ const Login = () => {
                     value={formData.password}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.password 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                      errors.password
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
                     }`}
                     placeholder="Enter your password"
                     disabled={loading}
@@ -174,9 +188,9 @@ const Login = () => {
             {/* Register Link */}
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                Don't have an account?{' '}
-                <Link 
-                  to="/register" 
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
                   className="text-cyan-600 hover:text-cyan-700 font-medium transition-colors duration-300"
                 >
                   Create Account
@@ -186,8 +200,6 @@ const Login = () => {
           </div>
         </div>
       </div>
-
-      
     </div>
   );
 };

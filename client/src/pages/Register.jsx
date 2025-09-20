@@ -1,27 +1,35 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, UserPlus, Loader, AlertCircle, Waves } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Lock,
+  UserPlus,
+  Loader,
+  AlertCircle,
+  Waves,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'user'
+    name: "",
+    email: "",
+    password: "",
+    role: "user",
   });
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
     uppercase: false,
     lowercase: false,
     number: false,
-    symbol: false
+    symbol: false,
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -30,10 +38,11 @@ const Register = () => {
     setErrors({});
     // Validate required fields
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    if (formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -42,7 +51,12 @@ const Register = () => {
     const result = await register(formData);
     setLoading(false);
     if (result.success) {
-      navigate('/', { replace: true });
+      // Check if organization needs to complete profile
+      if (result.needsProfileCompletion) {
+        navigate("/organization-details", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } else {
       setErrors({ general: result.error });
     }
@@ -50,57 +64,55 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Password strength checker
-    if (name === 'password') {
+    if (name === "password") {
       setPasswordCriteria({
         length: value.length >= 8,
         uppercase: /[A-Z]/.test(value),
         lowercase: /[a-z]/.test(value),
         number: /[0-9]/.test(value),
-        symbol: /[^A-Za-z0-9]/.test(value)
+        symbol: /[^A-Za-z0-9]/.test(value),
       });
     }
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   // Password strength checker function
   function checkPasswordStrength(password) {
-    if (!password) return '';
+    if (!password) return "";
     let score = 0;
     if (password.length >= 8) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[a-z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    if (score >= 5) return 'Strong';
-    if (score >= 3) return 'Medium';
-    return 'Weak';
+    if (score >= 5) return "Strong";
+    if (score >= 3) return "Medium";
+    return "Weak";
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-      
-      
       {/* Hero Background Section */}
       <div className="pt-32 pb-20 relative overflow-hidden">
         {/* Background with ocean theme */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80')` 
+          style={{
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80')`,
           }}
         />
-        
+
         <div className="relative z-10 max-w-md mx-auto px-6">
           {/* Registration Form Card */}
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
@@ -111,8 +123,12 @@ const Register = () => {
                   <Waves className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Join Shore Clean</h1>
-              <p className="text-gray-600">Create your account to start making a difference</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                Join Shore Clean
+              </h1>
+              <p className="text-gray-600">
+                Create your account to start making a difference
+              </p>
             </div>
 
             {/* Error Message */}
@@ -127,7 +143,10 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Name Field */}
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Full Name
                 </label>
                 <div className="relative">
@@ -141,9 +160,9 @@ const Register = () => {
                     value={formData.name}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.name 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                      errors.name
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
                     }`}
                     placeholder="Enter your full name"
                     disabled={loading}
@@ -156,7 +175,10 @@ const Register = () => {
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Email Address
                 </label>
                 <div className="relative">
@@ -170,9 +192,9 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.email 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                      errors.email
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
                     }`}
                     placeholder="Enter your email"
                     disabled={loading}
@@ -185,7 +207,10 @@ const Register = () => {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -199,29 +224,61 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 ${
-                      errors.password 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                      errors.password
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
                     }`}
                     placeholder="Create a strong password (min 8 chars, upper/lower, number, symbol)"
                     disabled={loading}
                   />
                 </div>
                 <ul className="mt-3 space-y-1 text-sm">
-                  <li className={passwordCriteria.length ? 'text-green-600' : 'text-red-500'}>
-                    {passwordCriteria.length ? '✔' : '✖'} At least 8 characters
+                  <li
+                    className={
+                      passwordCriteria.length
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {passwordCriteria.length ? "✔" : "✖"} At least 8 characters
                   </li>
-                  <li className={passwordCriteria.uppercase ? 'text-green-600' : 'text-red-500'}>
-                    {passwordCriteria.uppercase ? '✔' : '✖'} Contains uppercase letter
+                  <li
+                    className={
+                      passwordCriteria.uppercase
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {passwordCriteria.uppercase ? "✔" : "✖"} Contains uppercase
+                    letter
                   </li>
-                  <li className={passwordCriteria.lowercase ? 'text-green-600' : 'text-red-500'}>
-                    {passwordCriteria.lowercase ? '✔' : '✖'} Contains lowercase letter
+                  <li
+                    className={
+                      passwordCriteria.lowercase
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {passwordCriteria.lowercase ? "✔" : "✖"} Contains lowercase
+                    letter
                   </li>
-                  <li className={passwordCriteria.number ? 'text-green-600' : 'text-red-500'}>
-                    {passwordCriteria.number ? '✔' : '✖'} Contains number
+                  <li
+                    className={
+                      passwordCriteria.number
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {passwordCriteria.number ? "✔" : "✖"} Contains number
                   </li>
-                  <li className={passwordCriteria.symbol ? 'text-green-600' : 'text-red-500'}>
-                    {passwordCriteria.symbol ? '✔' : '✖'} Contains symbol
+                  <li
+                    className={
+                      passwordCriteria.symbol
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }
+                  >
+                    {passwordCriteria.symbol ? "✔" : "✖"} Contains symbol
                   </li>
                 </ul>
                 {errors.password && (
@@ -229,7 +286,10 @@ const Register = () => {
                 )}
               </div>
               <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Select Role
                 </label>
                 <select
@@ -245,12 +305,12 @@ const Register = () => {
                 </select>
               </div>
 
-              
-
               {/* Register Button */}
               <button
                 type="submit"
-                disabled={loading || !Object.values(passwordCriteria).every(Boolean)}
+                disabled={
+                  loading || !Object.values(passwordCriteria).every(Boolean)
+                }
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-3 px-4 rounded-xl hover:from-cyan-600 hover:to-blue-600 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-300 font-semibold flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -270,9 +330,9 @@ const Register = () => {
             {/* Login Link */}
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                Already have an account?{' '}
-                <Link 
-                  to="/login" 
+                Already have an account?{" "}
+                <Link
+                  to="/login"
                   className="text-cyan-600 hover:text-cyan-700 font-medium transition-colors duration-300"
                 >
                   Sign In
@@ -282,8 +342,6 @@ const Register = () => {
           </div>
         </div>
       </div>
-
-      
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Calendar,
   Users,
@@ -8,8 +8,15 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  Trash2,
+  Edit,
 } from "lucide-react";
-import { getEvents, rsvpForEvent, cancelRsvpForEvent } from "../utils/api";
+import {
+  getEvents,
+  rsvpForEvent,
+  cancelRsvpForEvent,
+  deleteEvent,
+} from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { canCreateEvents, isOrganizer, isVolunteer } from "../utils/roleUtils";
 import Navbar from "../components/Navbar";
@@ -25,6 +32,11 @@ const Events = () => {
   const [error, setError] = useState("");
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get organizer ID from URL search params
+  const searchParams = new URLSearchParams(location.search);
+  const organizerIdFromUrl = searchParams.get("organizer");
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -33,11 +45,14 @@ const Events = () => {
       try {
         const params = { page, limit };
 
-        // If user is an organizer, only show their events
-        if (isOrganizer(currentUser)) {
+        // If there's an organizer ID in the URL, filter by that organizer
+        if (organizerIdFromUrl) {
+          params.organizer = organizerIdFromUrl;
+        } else if (isOrganizer(currentUser)) {
+          // If user is an organizer and no specific organizer in URL, show their events
           params.organizer = currentUser._id;
         }
-        // Volunteers see all events
+        // Volunteers see all events when no organizer filter is specified
 
         const data = await getEvents(params);
         setEvents(data.events || []);
@@ -50,7 +65,7 @@ const Events = () => {
     };
 
     fetchEvents();
-  }, [page, limit, currentUser]);
+  }, [page, limit, currentUser, organizerIdFromUrl]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
     if (!currentUser) {
@@ -75,6 +90,26 @@ const Events = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId, eventTitle) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteEvent(eventId);
+      // Remove the event from local state
+      setEvents((evts) => evts.filter((ev) => ev._id !== eventId));
+      alert("Event deleted successfully!");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Could not delete event. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50">
       <Navbar />
@@ -84,17 +119,23 @@ const Events = () => {
             className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <ArrowLeft className="h-5 w-5" /> Back to Home
+            <ArrowLeft className="h-5 w-5" /> Go Back
           </button>
 
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900">
-            {isOrganizer(currentUser) ? "My" : "Upcoming"}{" "}
+            {organizerIdFromUrl
+              ? "Organization"
+              : isOrganizer(currentUser)
+              ? "My"
+              : "Upcoming"}{" "}
             <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
               Events
             </span>
           </h1>
           <p className="text-lg text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            {isOrganizer(currentUser)
+            {organizerIdFromUrl
+              ? "Explore all events organized by this organization and join their coastal clean-up initiatives."
+              : isOrganizer(currentUser)
               ? "Manage your organization's coastal clean-up events and track their impact."
               : "Discover and join coastal clean-up events near you. RSVP to secure your spot and make an impact!"}
           </p>
@@ -195,17 +236,33 @@ const Events = () => {
                       </div>
                     </div>
                   </Link>
-                  {/* Only show Update Event button for organizers viewing their own events */}
-                  {isOrganizer(currentUser) && (
-                    <Link
-                      to={`/admin/create-event?edit=${event._id}`}
-                      className="absolute top-4 left-4 z-10"
-                    >
-                      <button className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold shadow hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 text-xs cursor-pointer">
-                        Update Event
-                      </button>
-                    </Link>
-                  )}
+                  {/* Edit and Delete buttons for organizers viewing their own events */}
+                  {isOrganizer(currentUser) &&
+                    ((!organizerIdFromUrl &&
+                      currentUser._id === event.organizer?._id) ||
+                      (!organizerIdFromUrl &&
+                        currentUser._id === event.organizer)) && (
+                      <div className="absolute top-4 left-4 z-10 flex gap-2">
+                        <Link
+                          to={`/admin/create-event?edit=${event._id}`}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 hover:scale-105 hover:shadow-xl transition-all duration-300 text-xs cursor-pointer flex items-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteEvent(event._id, event.title);
+                          }}
+                          className="px-3 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 hover:scale-105 hover:shadow-xl transition-all duration-300 text-xs cursor-pointer flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

@@ -6,26 +6,38 @@ import {
   MapPin,
   Loader,
   ArrowLeft,
-  Trash2,
   Edit3,
   Save,
   X,
   User,
+  QrCode,
+  Download,
+  CheckCircle,
+   Star,
+  Heart,
+  Trash2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Box from "@mui/material/Box";
 import Rating from "@mui/material/Rating";
 import Typography from "@mui/material/Typography";
+import QRCode from "../components/QRCode";
+import Comments from "../components/Comments";
+import StarRating from "../components/StarRating";
 import {
   getEventById,
   updateEvent,
   deleteEvent,
   rsvpForEvent,
   cancelRsvpForEvent,
+  registerForEvent,
+  getRegistrationStatus,
+  cancelRegistration,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { canEditEvent, canRSVPToEvents, isVolunteer } from "../utils/roleUtils";
+import api from "../utils/api";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -40,13 +52,19 @@ const EventDetails = () => {
   const [editFormData, setEditFormData] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // Ratings (keeping localStorage for now since no backend implementation)
-  const [rating, setRating] = useState(0);
+  // Ratings
+  const [userRating, setUserRating] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
+  const [totalRatings, setTotalRatings] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
 
-  // Comments
+  // Registration state
+  const [registration, setRegistration] = useState(null);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+
+  // Comments state
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -71,18 +89,45 @@ const EventDetails = () => {
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch(() => setComments([]));
-    // Fetch ratings from MongoDB
-    fetch(`/api/events/${id}/ratings`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRating(data.userRating || 0);
-        setAvgRating(data.avgRating || 0);
-      })
-      .catch(() => {
-        setRating(0);
-        setAvgRating(0);
-      });
-  }, [id]);
+
+    // Check registration status if user is a volunteer
+    if (currentUser && isVolunteer(currentUser)) {
+      getRegistrationStatus(id)
+        .then((data) => {
+          if (data.registered) {
+            setRegistration(data.registration);
+          }
+        })
+        .catch(() => {
+          // User is not registered, which is fine
+        });
+    }
+  }, [id, currentUser]);
+
+  // Separate useEffect for ratings that depends on currentUser
+  useEffect(() => {
+    const fetchEventRatings = async () => {
+      if (!id) return;
+
+      try {
+        const ratingsResponse = await api.get(`/ratings/event/${id}/average`);
+        setAvgRating(ratingsResponse.data.average || 0);
+        setTotalRatings(ratingsResponse.data.count || 0);
+
+        // Fetch user's rating if authenticated and currentUser is available
+        if (currentUser?._id) {
+          const userRatingResponse = await api.get(
+            `/ratings/event/${id}/user?userId=${currentUser._id}`
+          );
+          setUserRating(userRatingResponse.data.rating || 0);
+        }
+      } catch (error) {
+        console.log("No ratings found or error fetching ratings");
+      }
+    };
+
+    fetchEventRatings();
+  }, [id, currentUser]);
 
   const handleRSVP = async (alreadyRSVPed) => {
     if (!event || !currentUser) return;
@@ -95,6 +140,76 @@ const EventDetails = () => {
     } catch (error) {
       console.error("RSVP error:", error);
       alert("Could not update RSVP. Please try again.");
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!event || !currentUser) return;
+
+    setRegistrationLoading(true);
+    try {
+      const result = await registerForEvent(event._id);
+      setRegistration(result.registration);
+      setShowQR(true);
+      alert("Successfully registered for the event! Your QR code has been generated.");
+    } catch (error) {
+      console.error("Registration error:", error);
+      const message = error.response?.data?.message || "Could not register for event. Please try again.";
+      alert(message);
+    } finally {
+      setRegistrationLoading(false);
+    }
+  };
+
+  const handleCancelRegistration = async () => {
+    if (!event || !currentUser || !registration) return;
+
+    const confirmCancel = window.confirm("Are you sure you want to cancel your registration for this event?");
+    if (!confirmCancel) return;
+
+    try {
+      await cancelRegistration(event._id);
+      setRegistration(null);
+      setShowQR(false);
+      alert("Your registration has been cancelled.");
+    } catch (error) {
+      console.error("Cancel registration error:", error);
+      const message = error.response?.data?.message || "Could not cancel registration. Please try again.";
+      alert(message);
+    }
+  };
+
+  const downloadQR = () => {
+    const canvas = document.querySelector('#qr-code canvas');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = `event-${event.title}-qr.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  };
+  const handleRating = async (newRating) => {
+    if (ratingLoading || !currentUser?._id) return;
+
+    setRatingLoading(true);
+    try {
+      await api.post("/ratings", {
+        eventId: id,
+        rating: newRating,
+        userId: currentUser._id,
+      });
+
+      setUserRating(newRating);
+
+      // Refetch ratings to update average
+      const ratingsResponse = await api.get(`/ratings/event/${id}/average`);
+      setAvgRating(ratingsResponse.data.average || 0);
+      setTotalRatings(ratingsResponse.data.count || 0);
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      alert("Could not submit rating. Please try again.");
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -152,55 +267,6 @@ const EventDetails = () => {
   // Helper function to check if current user can edit/delete the event
   const canEditEventCheck = canEditEvent(currentUser, event);
 
-  const handleRatingChange = async (newValue) => {
-    setRating(newValue);
-    try {
-      const res = await fetch(`/api/events/${id}/ratings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: newValue }),
-      });
-      const data = await res.json();
-      setAvgRating(data.avgRating || newValue);
-    } catch {
-      // fallback: keep local rating
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-    try {
-      const res = await fetch(`/api/comments/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: newComment, userId: currentUser?._id }),
-      });
-      const data = await res.json();
-      // If backend returns single comment, append; if array, replace
-      if (Array.isArray(data)) {
-        setComments(data);
-      } else {
-        setComments((prev) => [...prev, data]);
-      }
-      setNewComment("");
-    } catch {
-      // fallback: do nothing
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    try {
-      const res = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setComments((prev) => prev.filter((c) => c._id !== commentId));
-      }
-    } catch {
-      // fallback: do nothing
-    }
-  };
-
   const statusColors = {
     draft: "bg-gray-200 text-gray-700",
     published: "bg-green-100 text-green-700",
@@ -216,7 +282,7 @@ const EventDetails = () => {
             className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-5 w-5" /> Back to Events
+            <ArrowLeft className="h-5 w-5" /> Go back
           </button>
 
           {loading ? (
@@ -269,6 +335,13 @@ const EventDetails = () => {
                   <div className="flex gap-3">
                     {!isEditing ? (
                       <>
+                        <Link
+                          to={`/events/${event._id}/manage`}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200 font-medium"
+                        >
+                          <Users className="h-4 w-4" />
+                          Manage Volunteers
+                        </Link>
                         <button
                           onClick={handleEdit}
                           className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 font-medium"
@@ -307,26 +380,6 @@ const EventDetails = () => {
                   </div>
                 )}
               </div>
-
-              {/* Rating */}
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  component="legend"
-                  className="text-lg font-semibold"
-                >
-                  Rate this Event
-                </Typography>
-                <Rating
-                  name="event-rating"
-                  value={rating}
-                  onChange={(e, newValue) => handleRatingChange(newValue)}
-                />
-                {avgRating > 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    Average Rating: {avgRating.toFixed(1)} ⭐
-                  </Typography>
-                )}
-              </Box>
 
               {/* Edit Form or Event Details */}
               {isEditing ? (
@@ -505,7 +558,7 @@ const EventDetails = () => {
 
                   {/* View Organization Button for Volunteers */}
                   {isVolunteer(currentUser) && event.organizer && (
-                    <div className="mb-8">
+                    <div className="mb-8 space-y-4">
                       <Link
                         to={`/organization/${
                           event.organizer._id || event.organizer
@@ -515,69 +568,165 @@ const EventDetails = () => {
                         <User className="h-5 w-5 mr-2" />
                         View Organization
                       </Link>
+
+                      {/* Donate Now Button - Only visible to volunteers */}
+                      <div>
+                        <Link
+                          to="/donations"
+                          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                        >
+                          <Heart className="h-5 w-5 mr-2" />
+                          Donate Now
+                        </Link>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Support environmental conservation efforts
+                        </p>
+                      </div>
                     </div>
                   )}
 
-                  {/* RSVP Button - Temporarily disabled */}
-                  {/* {canRSVPToEvents(currentUser) && (
-                    <div className="mb-8">
-                      {event.attendees?.includes(currentUser._id) ? (
-                        <button
-                          onClick={() => handleRSVP(true)}
-                          className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors duration-200"
-                        >
-                          Cancel RSVP
-                        </button>
+                  {/* Volunteer Registration Section */}
+                  {isVolunteer(currentUser) && (
+                    <div className="mb-8 bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-cyan-600" />
+                        Volunteer Registration
+                      </h3>
+                      
+                      {registration ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 text-green-600 mb-4">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-medium">You are registered for this event!</span>
+                          </div>
+                          
+                          {/* Registration Status */}
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                              <div>
+                                <p className="text-sm text-gray-600">Status: <span className="font-medium text-green-700 capitalize">{registration.status}</span></p>
+                                <p className="text-sm text-gray-600">Registered: {new Date(registration.createdAt).toLocaleDateString()}</p>
+                                {registration.checkedInAt && (
+                                  <p className="text-sm text-gray-600">Checked In: {new Date(registration.checkedInAt).toLocaleString()}</p>
+                                )}
+                                {registration.checkedOutAt && (
+                                  <p className="text-sm text-gray-600">Checked Out: {new Date(registration.checkedOutAt).toLocaleString()}</p>
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setShowQR(!showQR)}
+                                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
+                                >
+                                  <QrCode className="h-4 w-4" />
+                                  {showQR ? 'Hide QR Code' : 'Show QR Code'}
+                                </button>
+                                
+                                <button
+                                  onClick={handleCancelRegistration}
+                                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                >
+                                  Cancel Registration
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* QR Code Display */}
+                          {showQR && registration.qrCode && (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                              <h4 className="text-lg font-medium text-gray-900 mb-4">Your Event QR Code</h4>
+                              <div className="flex justify-center mb-4" id="qr-code">
+                                <QRCode 
+                                  value={registration.qrCode} 
+                                  size={200}
+                                  level="M"
+                                  includeMargin={true}
+                                />
+                              </div>
+                              <p className="text-sm text-gray-600 mb-4">
+                                Present this QR code to event organizers for check-in and check-out.
+                              </p>
+                              <button
+                                onClick={downloadQR}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mx-auto"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download QR Code
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <button
-                          onClick={() => handleRSVP(false)}
-                          className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-colors duration-200"
-                        >
-                          RSVP for Event
-                        </button>
+                        <div className="text-center">
+                          <p className="text-gray-600 mb-4">
+                            Register as a volunteer for this event to receive your unique QR code for check-in.
+                          </p>
+                          <button
+                            onClick={handleRegister}
+                            disabled={registrationLoading}
+                            className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-400 text-white rounded-lg font-semibold transition-colors duration-200"
+                          >
+                            {registrationLoading ? 'Registering...' : 'Register as Volunteer'}
+                          </button>
+                        </div>
                       )}
-                      <p className="text-sm text-gray-600 mt-2">
-                        {event.attendees?.length || 0} people have RSVP'd
-                      </p>
                     </div>
-                  )} */}
+                  )}
                 </>
               )}
 
-              {/* Comments Section */}
-              <div className="mt-8 border-t pt-4">
-                <h2 className="text-xl font-semibold mb-3">Comments</h2>
-                {comments.map((c) => (
-                  <div
-                    key={c._id}
-                    className="flex justify-between items-center bg-white p-2 rounded-lg shadow mb-2"
-                  >
-                    <span className="text-gray-800">{c.text}</span>
-                    {String(c.userId) === String(currentUser?._id) && (
-                      <button
-                        onClick={() => handleDeleteComment(c._id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="flex mt-3 gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 border px-3 py-2 rounded-lg"
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                  >
-                    Send
-                  </button>
+              {/* Rating Section */}
+              <div className="mt-8 border-t pt-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Rate this Event
+                  </h2>
+                  {avgRating > 0 && (
+                    <div className="text-right">
+                      <div className="flex items-center justify-end gap-2 mb-1">
+                        <StarRating
+                          rating={avgRating}
+                          readOnly={true}
+                          size="sm"
+                        />
+                        <span className="text-lg font-semibold text-gray-700">
+                          {avgRating.toFixed(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {totalRatings}{" "}
+                        {totalRatings === 1 ? "rating" : "ratings"}
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-200">
+                  <p className="text-gray-700 mb-4 text-center">
+                    How would you rate this event?
+                  </p>
+                  <div className="flex justify-center">
+                    <StarRating
+                      rating={userRating}
+                      onRatingChange={handleRating}
+                      readOnly={ratingLoading}
+                      size="lg"
+                    />
+                  </div>
+                  {userRating > 0 && (
+                    <p className="text-center text-sm text-gray-600 mt-3">
+                      You rated this event {userRating}{" "}
+                      {userRating === 1 ? "star" : "stars"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Comments Section */}
+              <div className="mt-8">
+                <Comments eventId={id} />
               </div>
 
               {/* RSVP - Temporarily disabled */}

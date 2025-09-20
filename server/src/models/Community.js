@@ -120,7 +120,6 @@ const communitySchema = new mongoose.Schema(
 );
 
 // Indexes for efficient queries
-communitySchema.index({ slug: 1 });
 communitySchema.index({ createdBy: 1 });
 communitySchema.index({ category: 1, isActive: 1 });
 communitySchema.index({ "members.userId": 1 });

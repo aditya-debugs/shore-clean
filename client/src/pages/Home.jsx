@@ -562,6 +562,37 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Donation CTA Section - Only visible to volunteers */}
+      {isVolunteer(currentUser) && (
+        <section className="py-16 px-6 bg-gradient-to-r from-green-50 to-emerald-50">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-green-100">
+              <Heart className="h-16 w-16 text-green-500 mx-auto mb-6" />
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                Support Our Mission
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                Your donations help us organize more cleanup events, provide
+                necessary equipment, and expand our environmental conservation
+                efforts worldwide.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                  to="/donations"
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  <Heart className="h-6 w-6 mr-2" />
+                  Donate Now
+                </Link>
+                <p className="text-sm text-gray-500">
+                  Every contribution makes a difference
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <Footer />
     </div>
   );

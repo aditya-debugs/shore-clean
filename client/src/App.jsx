@@ -10,15 +10,27 @@ import {
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
+import EventManagement from "./pages/EventManagement";
 import CreateEvent from "./pages/admin/CreateEvent";
+import AdminDashboard from "./pages/admin/Dashboard";
+import VolunteerDashboard from "./pages/volunteer/Dashboard";
+import Certificates from "./pages/Certificates";
+import VolunteerCertificates from "./pages/volunteer/Certificates";
+import MyEvents from "./pages/volunteer/MyEvents";
+import AdminVolunteers from "./pages/admin/Volunteers";
+import AdminOrgProfile from "./pages/admin/OrgProfile";
+import OrganizationProfile from "./pages/OrganizationProfile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+import OrganizationRoute from "./components/OrganizationRoute";
 import Profile from "./pages/Profile";
 import Organization from "./pages/Organization";
+import OrganizationDetailsForm from "./pages/OrganizationDetailsForm";
 import Donations from "./pages/Donations"; // ✅ import Donations page
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
@@ -45,119 +57,238 @@ function ScrollToTop() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/donation-success" element={<DonationSuccess />} />
-          <Route path="/success" element={<DonationSuccess />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            {/* Public Routes - wrapped with OrganizationRoute for profile completion check */}
+            <Route
+              path="/"
+              element={
+                <OrganizationRoute>
+                  <Home />
+                </OrganizationRoute>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/donation-success" element={<DonationSuccess />} />
+            <Route path="/success" element={<DonationSuccess />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/admin/create-event"
-            element={
-              <PrivateRoute>
-                <CreateEvent />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/events"
-            element={
-              <PrivateRoute>
-                <Events />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/events/:id"
-            element={
-              <PrivateRoute>
-                <EventDetails />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <ComingSoon pageName="Dashboard" />
-              </PrivateRoute>
-            }
-          />
+            {/* Organization Profile Setup */}
+            <Route
+              path="/organization-details"
+              element={
+                <PrivateRoute>
+                  <OrganizationDetailsForm />
+                </PrivateRoute>
+              }
+            />
 
-          {/* ✅ Replace ComingSoon with Donations page */}
-          <Route
-            path="/donations"
-            element={
-              <PrivateRoute>
-                <Donations />
-              </PrivateRoute>
-            }
-          />
+            {/* Protected Routes - wrapped with both PrivateRoute and OrganizationRoute */}
+            <Route
+              path="/admin/create-event"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <CreateEvent />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <Events />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events/:id"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <EventDetails />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events/:id/manage"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <EventManagement />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminDashboard />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminDashboard />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/dashboard"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <VolunteerDashboard />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
 
-          {/* Chat Community Route */}
-          <Route
-            path="/chat"
-            element={
-              <PrivateRoute>
-                <ChatCommunity />
-              </PrivateRoute>
-            }
-          />
+            {/* ✅ Replace ComingSoon with Donations page */}
+            <Route
+              path="/donations"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <Donations />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/certificates"
-            element={
-              <PrivateRoute>
-                <ComingSoon pageName="Certificates" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/organization/:id"
-            element={
-              <PrivateRoute>
-                <Organization />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/impact" element={<ComingSoon pageName="Impact" />} />
-          <Route path="/about" element={<ComingSoon pageName="About" />} />
+            {/* Chat Community Route */}
+            <Route
+              path="/chat"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <ChatCommunity />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
 
-          {/* 404 Route */}
-          <Route
-            path="*"
-            element={
-              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
-                <div className="text-center">
-                  <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
-                  <p className="text-gray-600 mb-8">Page not found</p>
-                  <Link
-                    to="/"
-                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 inline-block"
-                  >
-                    Go Home
-                  </Link>
+            <Route
+              path="/certificates"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <Certificates />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/certificates"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <VolunteerCertificates />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/my-events"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <MyEvents />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/volunteers"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminVolunteers />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminOrgProfile />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organization-profile"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <OrganizationProfile />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <Profile />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organization/:id"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <Organization />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route path="/impact" element={<ComingSoon pageName="Impact" />} />
+            <Route path="/about" element={<ComingSoon pageName="About" />} />
+
+            {/* 404 Route */}
+            <Route
+              path="*"
+              element={
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50">
+                  <div className="text-center">
+                    <h1 className="text-4xl font-bold text-gray-800 mb-4">
+                      404
+                    </h1>
+                    <p className="text-gray-600 mb-8">Page not found</p>
+                    <Link
+                      to="/"
+                      className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 inline-block"
+                    >
+                      Go Home
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

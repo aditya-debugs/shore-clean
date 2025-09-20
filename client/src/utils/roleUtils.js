@@ -95,7 +95,7 @@ export const getProfilePath = (user) => {
   if (!user) return "/profile";
 
   if (isOrganizer(user)) {
-    return "/admin/org-profile";
+    return `/organization/${user._id}`;
   }
 
   return "/profile";

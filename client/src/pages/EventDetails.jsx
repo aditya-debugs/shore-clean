@@ -194,6 +194,8 @@ const EventDetails = () => {
       link.download = `event-${event.title}-qr.png`;
       link.href = canvas.toDataURL();
       link.click();
+    }
+  };
   const handleRating = async (newRating) => {
     if (ratingLoading || !currentUser?._id) return;
 

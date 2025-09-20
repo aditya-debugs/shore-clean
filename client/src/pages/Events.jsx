@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   Users,
@@ -7,6 +7,7 @@ import {
   Loader,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import { getEvents, rsvpForEvent, cancelRsvpForEvent } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
@@ -22,6 +23,7 @@ const Events = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState("");
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -76,6 +78,13 @@ const Events = () => {
       <Navbar />
       <section className="pt-32 pb-12 px-6">
         <div className="max-w-6xl mx-auto">
+          <button
+            className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
+            onClick={() => navigate('/')}
+          >
+            <ArrowLeft className="h-5 w-5" /> Back to Home
+          </button>
+          
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900">
             Upcoming{" "}
             <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
@@ -114,9 +123,14 @@ const Events = () => {
               <h3 className="text-xl font-medium text-gray-600 mb-2">
                 No upcoming events
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-6">
                 Check back later for new coastal cleanup events.
               </p>
+              <Link to="/admin/create-event">
+                <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
+                  Create Event
+                </button>
+              </Link>
             </div>
           )}
 

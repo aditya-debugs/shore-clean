@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import emailjs from "@emailjs/browser";
 
 const initialState = {
@@ -185,6 +186,13 @@ const CreateEvent = () => {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 md:px-0 animate-fade-in">
+      <button
+        className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
+        onClick={() => navigate('/')}
+      >
+        <ArrowLeft className="h-5 w-5" /> Back to Home
+      </button>
+      
       <h1 className="text-3xl md:text-4xl font-bold text-cyan-700 mb-8 text-center">
         {isEdit ? "Update Event" : "Create New Event"}
       </h1>

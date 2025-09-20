@@ -156,17 +156,21 @@ const Home = () => {
         gradient: "from-indigo-400 to-blue-400",
       },
     ]);
+    
     // Fetch events from MongoDB API
-    fetch('/api/events')
-      .then(res => res.json())
-      .then(data => {
-        setUpcomingEvents(data);
+    const fetchEvents = async () => {
+      try {
+        const data = await getEvents({ limit: 6 }); // Limit to 6 events for home page
+        setUpcomingEvents(data.events || data || []);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Error fetching events:", error);
         setUpcomingEvents([]);
         setLoading(false);
-      });
+      }
+    };
+    
+    fetchEvents();
   }, []);
 
   useEffect(() => {
@@ -349,11 +353,11 @@ const Home = () => {
           </div>
           {upcomingEvents.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {upcomingEvents.map((event) => (
+              {upcomingEvents.map((event, idx) => (
                 <div
-                  key={event.id}
+                  key={event._id}
                   className="bg-white rounded-xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in"
-                  style={{ animationDelay: `${event.id * 80}ms` }}
+                  style={{ animationDelay: `${idx * 80}ms` }}
                 >
                   <div
                     className="h-48 bg-cover bg-center relative"
@@ -386,19 +390,22 @@ const Home = () => {
                         <div className="flex items-center text-cyan-500">
                           <Users className="h-4 w-4 mr-1" />
                           <span className="text-sm font-medium">
-                            {event.participants} joined
+                            {event.attendees?.length || 0} joined
                           </span>
                         </div>
                         <div className="text-xs text-gray-500">
-                          by {event.organizer}
+                          by {event.organizer?.name || "Organizer"}
                         </div>
                       </div>
                     </div>
 
                     {isAuthenticated ? (
-                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
-                        Join Event
-                      </button>
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium text-center block"
+                      >
+                        View Details
+                      </Link>
                     ) : (
                       <Link
                         to="/register"
@@ -434,7 +441,7 @@ const Home = () => {
                 to={isAuthenticated ? "/events" : "/register"}
                 className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
               >
-                {isAuthenticated ? "View More Events" : "Join to See Events"}
+                {isAuthenticated ? "View My Events" : "Join to See Events"}
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
             </div>

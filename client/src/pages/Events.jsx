@@ -84,7 +84,7 @@ const Events = () => {
             className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <ArrowLeft className="h-5 w-5" /> Back to Home
+            <ArrowLeft className="h-5 w-5" /> Go Back
           </button>
 
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900">

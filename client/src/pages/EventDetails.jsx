@@ -11,6 +11,8 @@ import {
   X,
   User,
   Star,
+  Heart,
+  Trash2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -71,11 +73,9 @@ const EventDetails = () => {
   useEffect(() => {
     const fetchEventRatings = async () => {
       if (!id) return;
-      
+
       try {
-        const ratingsResponse = await api.get(
-          `/ratings/event/${id}/average`
-        );
+        const ratingsResponse = await api.get(`/ratings/event/${id}/average`);
         setAvgRating(ratingsResponse.data.average || 0);
         setTotalRatings(ratingsResponse.data.count || 0);
 
@@ -202,7 +202,7 @@ const EventDetails = () => {
             className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-5 w-5" /> Back to Home
+            <ArrowLeft className="h-5 w-5" /> Go back
           </button>
 
           {loading ? (
@@ -471,7 +471,7 @@ const EventDetails = () => {
 
                   {/* View Organization Button for Volunteers */}
                   {isVolunteer(currentUser) && event.organizer && (
-                    <div className="mb-8">
+                    <div className="mb-8 space-y-4">
                       <Link
                         to={`/organization/${
                           event.organizer._id || event.organizer
@@ -481,6 +481,20 @@ const EventDetails = () => {
                         <User className="h-5 w-5 mr-2" />
                         View Organization
                       </Link>
+
+                      {/* Donate Now Button - Only visible to volunteers */}
+                      <div>
+                        <Link
+                          to="/donations"
+                          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                        >
+                          <Heart className="h-5 w-5 mr-2" />
+                          Donate Now
+                        </Link>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Support environmental conservation efforts
+                        </p>
+                      </div>
                     </div>
                   )}
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../utils/api";
+import { isOrganizer } from "../utils/roleUtils";
 
 const AuthContext = createContext({});
 
@@ -59,11 +60,17 @@ export const AuthProvider = ({ children }) => {
       };
 
       // Save to localStorage and state
-  localStorage.setItem('user', JSON.stringify(userWithToken));
-  localStorage.setItem('token', accessToken); // Ensure token is stored separately
-  console.log('Token stored after login:', accessToken);
-  setCurrentUser(userWithToken);
-  return { success: true };
+      localStorage.setItem("user", JSON.stringify(userWithToken));
+      localStorage.setItem("token", accessToken); // Ensure token is stored separately
+      console.log("Token stored after login:", accessToken);
+      setCurrentUser(userWithToken);
+
+      return {
+        success: true,
+        user: userWithToken,
+        needsProfileCompletion:
+          isOrganizer(userWithToken) && !userWithToken.hasCompletedProfile,
+      };
     } catch (error) {
       console.error("Login error:", error.response?.data);
       return {
@@ -82,11 +89,17 @@ export const AuthProvider = ({ children }) => {
         _id: user._id || user.id,
         token: accessToken,
       };
-  localStorage.setItem('user', JSON.stringify(userWithToken));
-  localStorage.setItem('token', accessToken); // Ensure token is stored separately
-  console.log('Token stored after register:', accessToken);
-  setCurrentUser(userWithToken);
-  return { success: true };
+      localStorage.setItem("user", JSON.stringify(userWithToken));
+      localStorage.setItem("token", accessToken); // Ensure token is stored separately
+      console.log("Token stored after register:", accessToken);
+      setCurrentUser(userWithToken);
+
+      return {
+        success: true,
+        user: userWithToken,
+        needsProfileCompletion:
+          isOrganizer(userWithToken) && !userWithToken.hasCompletedProfile,
+      };
     } catch (error) {
       console.error("Register error:", error.response?.data);
       return {
@@ -97,29 +110,51 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-  localStorage.removeItem('user');
-  localStorage.removeItem('token');
-  setCurrentUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setCurrentUser(null);
   };
 
   const updateProfile = async (userData) => {
     try {
-      const response = await api.put('/auth/profile', userData);
+      const response = await api.put("/auth/profile", userData);
       const { user } = response.data;
       const userWithToken = {
         ...user,
-        token: currentUser.token
+        token: currentUser.token,
       };
-      localStorage.setItem('user', JSON.stringify(userWithToken));
+      localStorage.setItem("user", JSON.stringify(userWithToken));
       setCurrentUser(userWithToken);
       return { success: true };
     } catch (error) {
-      console.error('Update profile error:', error.response?.data);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Profile update failed'
+      console.error("Update profile error:", error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.message || "Profile update failed",
       };
     }
+  };
+
+  const checkProfileCompletion = (user) => {
+    console.log("checkProfileCompletion - user:", user);
+    console.log("checkProfileCompletion - isOrganizer:", isOrganizer(user));
+    if (!user || !isOrganizer(user)) return true;
+    const completed = user.hasCompletedProfile === true;
+    console.log("checkProfileCompletion - completed:", completed);
+    return completed;
+  };
+
+  const updateCurrentUser = (updatedUserData) => {
+    console.log("updateCurrentUser - currentUser before:", currentUser);
+    console.log("updateCurrentUser - updatedUserData:", updatedUserData);
+    const updatedUser = {
+      ...currentUser,
+      ...updatedUserData,
+    };
+    console.log("updateCurrentUser - updatedUser after merge:", updatedUser);
+    setCurrentUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    console.log("updateCurrentUser - localStorage updated");
   };
 
   const value = {
@@ -128,7 +163,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     loading,
-    updateProfile
+    updateProfile,
+    checkProfileCompletion,
+    updateCurrentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -6,17 +6,16 @@ import {
   MapPin,
   Loader,
   ArrowLeft,
-  Trash2,
   Edit3,
   Save,
   X,
   User,
+  Star,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import Box from "@mui/material/Box";
-import Rating from "@mui/material/Rating";
-import Typography from "@mui/material/Typography";
+import Comments from "../components/Comments";
+import StarRating from "../components/StarRating";
 import {
   getEventById,
   updateEvent,
@@ -26,6 +25,7 @@ import {
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { canEditEvent, canRSVPToEvents, isVolunteer } from "../utils/roleUtils";
+import api from "../utils/api";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -40,13 +40,11 @@ const EventDetails = () => {
   const [editFormData, setEditFormData] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // Ratings (keeping localStorage for now since no backend implementation)
-  const [rating, setRating] = useState(0);
+  // Ratings
+  const [userRating, setUserRating] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
-
-  // Comments
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
+  const [totalRatings, setTotalRatings] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -64,25 +62,37 @@ const EventDetails = () => {
       }
     };
 
-    fetchEventData();
-
-    // Fetch comments from MongoDB
-    fetch(`/api/comments/${id}`)
-      .then((res) => res.json())
-      .then((data) => setComments(data))
-      .catch(() => setComments([]));
-    // Fetch ratings from MongoDB
-    fetch(`/api/events/${id}/ratings`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRating(data.userRating || 0);
-        setAvgRating(data.avgRating || 0);
-      })
-      .catch(() => {
-        setRating(0);
-        setAvgRating(0);
-      });
+    if (id) {
+      fetchEventData();
+    }
   }, [id]);
+
+  // Separate useEffect for ratings that depends on currentUser
+  useEffect(() => {
+    const fetchEventRatings = async () => {
+      if (!id) return;
+      
+      try {
+        const ratingsResponse = await api.get(
+          `/ratings/event/${id}/average`
+        );
+        setAvgRating(ratingsResponse.data.average || 0);
+        setTotalRatings(ratingsResponse.data.count || 0);
+
+        // Fetch user's rating if authenticated and currentUser is available
+        if (currentUser?._id) {
+          const userRatingResponse = await api.get(
+            `/ratings/event/${id}/user?userId=${currentUser._id}`
+          );
+          setUserRating(userRatingResponse.data.rating || 0);
+        }
+      } catch (error) {
+        console.log("No ratings found or error fetching ratings");
+      }
+    };
+
+    fetchEventRatings();
+  }, [id, currentUser]);
 
   const handleRSVP = async (alreadyRSVPed) => {
     if (!event || !currentUser) return;
@@ -95,6 +105,31 @@ const EventDetails = () => {
     } catch (error) {
       console.error("RSVP error:", error);
       alert("Could not update RSVP. Please try again.");
+    }
+  };
+
+  const handleRating = async (newRating) => {
+    if (ratingLoading || !currentUser?._id) return;
+
+    setRatingLoading(true);
+    try {
+      await api.post("/ratings", {
+        eventId: id,
+        rating: newRating,
+        userId: currentUser._id,
+      });
+
+      setUserRating(newRating);
+
+      // Refetch ratings to update average
+      const ratingsResponse = await api.get(`/ratings/event/${id}/average`);
+      setAvgRating(ratingsResponse.data.average || 0);
+      setTotalRatings(ratingsResponse.data.count || 0);
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      alert("Could not submit rating. Please try again.");
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -152,55 +187,6 @@ const EventDetails = () => {
   // Helper function to check if current user can edit/delete the event
   const canEditEventCheck = canEditEvent(currentUser, event);
 
-  const handleRatingChange = async (newValue) => {
-    setRating(newValue);
-    try {
-      const res = await fetch(`/api/events/${id}/ratings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: newValue }),
-      });
-      const data = await res.json();
-      setAvgRating(data.avgRating || newValue);
-    } catch {
-      // fallback: keep local rating
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-    try {
-      const res = await fetch(`/api/comments/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: newComment, userId: currentUser?._id }),
-      });
-      const data = await res.json();
-      // If backend returns single comment, append; if array, replace
-      if (Array.isArray(data)) {
-        setComments(data);
-      } else {
-        setComments((prev) => [...prev, data]);
-      }
-      setNewComment("");
-    } catch {
-      // fallback: do nothing
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    try {
-      const res = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setComments((prev) => prev.filter((c) => c._id !== commentId));
-      }
-    } catch {
-      // fallback: do nothing
-    }
-  };
-
   const statusColors = {
     draft: "bg-gray-200 text-gray-700",
     published: "bg-green-100 text-green-700",
@@ -216,7 +202,7 @@ const EventDetails = () => {
             className="flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold cursor-pointer"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-5 w-5" /> Back to Events
+            <ArrowLeft className="h-5 w-5" /> Back to Home
           </button>
 
           {loading ? (
@@ -307,26 +293,6 @@ const EventDetails = () => {
                   </div>
                 )}
               </div>
-
-              {/* Rating */}
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  component="legend"
-                  className="text-lg font-semibold"
-                >
-                  Rate this Event
-                </Typography>
-                <Rating
-                  name="event-rating"
-                  value={rating}
-                  onChange={(e, newValue) => handleRatingChange(newValue)}
-                />
-                {avgRating > 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    Average Rating: {avgRating.toFixed(1)} ⭐
-                  </Typography>
-                )}
-              </Box>
 
               {/* Edit Form or Event Details */}
               {isEditing ? (
@@ -544,40 +510,56 @@ const EventDetails = () => {
                 </>
               )}
 
-              {/* Comments Section */}
-              <div className="mt-8 border-t pt-4">
-                <h2 className="text-xl font-semibold mb-3">Comments</h2>
-                {comments.map((c) => (
-                  <div
-                    key={c._id}
-                    className="flex justify-between items-center bg-white p-2 rounded-lg shadow mb-2"
-                  >
-                    <span className="text-gray-800">{c.text}</span>
-                    {String(c.userId) === String(currentUser?._id) && (
-                      <button
-                        onClick={() => handleDeleteComment(c._id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="flex mt-3 gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 border px-3 py-2 rounded-lg"
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                  >
-                    Send
-                  </button>
+              {/* Rating Section */}
+              <div className="mt-8 border-t pt-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Rate this Event
+                  </h2>
+                  {avgRating > 0 && (
+                    <div className="text-right">
+                      <div className="flex items-center justify-end gap-2 mb-1">
+                        <StarRating
+                          rating={avgRating}
+                          readOnly={true}
+                          size="sm"
+                        />
+                        <span className="text-lg font-semibold text-gray-700">
+                          {avgRating.toFixed(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {totalRatings}{" "}
+                        {totalRatings === 1 ? "rating" : "ratings"}
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-200">
+                  <p className="text-gray-700 mb-4 text-center">
+                    How would you rate this event?
+                  </p>
+                  <div className="flex justify-center">
+                    <StarRating
+                      rating={userRating}
+                      onRatingChange={handleRating}
+                      readOnly={ratingLoading}
+                      size="lg"
+                    />
+                  </div>
+                  {userRating > 0 && (
+                    <p className="text-center text-sm text-gray-600 mt-3">
+                      You rated this event {userRating}{" "}
+                      {userRating === 1 ? "star" : "stars"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Comments Section */}
+              <div className="mt-8">
+                <Comments eventId={id} />
               </div>
 
               {/* RSVP - Temporarily disabled */}

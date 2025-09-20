@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, CheckCircle, AlertCircle, QrCode } from 'lucide-react';
+import { Camera, X, CheckCircle, AlertCircle, QrCode, Upload, Image } from 'lucide-react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { checkInVolunteer, checkOutVolunteer } from '../utils/api';
 
@@ -12,7 +12,9 @@ const QRScanner = ({ eventId, isOpen, onClose, onSuccess, mode = 'checkin' }) =>
   const [stream, setStream] = useState(null);
   const [lastScanTime, setLastScanTime] = useState(0);
   const [lastRejectedScan, setLastRejectedScan] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const scanIntervalRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -281,10 +283,78 @@ const QRScanner = ({ eventId, isOpen, onClose, onSuccess, mode = 'checkin' }) =>
     }
   };
 
-  const handleManualEntry = async () => {
-    const qrCode = prompt(`Enter QR code data for ${mode}:\n\nFormat: {"eventId":"...","userId":"...","timestamp":...}`);
-    if (qrCode && qrCode.trim()) {
-      await handleQRCodeScan(qrCode.trim());
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      // Create image element from file
+      const imageUrl = URL.createObjectURL(file);
+      const img = new Image();
+      
+      img.onload = async () => {
+        try {
+          // Create canvas to decode the image
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          // Use ZXing to decode QR from canvas
+          const codeReader = new BrowserMultiFormatReader();
+          const result = await codeReader.decodeFromImageElement(img);
+          
+          if (result) {
+            console.log('📷 QR decoded from image:', result.getText());
+            await handleQRCodeScan(result.getText());
+          }
+          
+          // Clean up
+          URL.revokeObjectURL(imageUrl);
+          
+        } catch (decodeError) {
+          console.error('QR decode error:', decodeError);
+          setError('No valid QR code found in image. Please try another image.');
+          URL.revokeObjectURL(imageUrl);
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+
+      img.onerror = () => {
+        setError('Failed to load image. Please try another file.');
+        URL.revokeObjectURL(imageUrl);
+        setUploadingImage(false);
+      };
+
+      img.src = imageUrl;
+
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setError('Failed to process image. Please try again.');
+      setUploadingImage(false);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -369,24 +439,29 @@ const QRScanner = ({ eventId, isOpen, onClose, onSuccess, mode = 'checkin' }) =>
 
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-2">
-                Position the volunteer's QR code within the camera view
+                Position the volunteer's QR code within the camera view or upload QR image
               </p>
               {processing && (
                 <p className="text-xs text-blue-600 mb-4 font-medium">
                   🎯 Valid QR Code detected! Processing...
                 </p>
               )}
-              {lastRejectedScan && !processing && (
+              {uploadingImage && (
+                <p className="text-xs text-blue-600 mb-4 font-medium">
+                  📷 Processing uploaded image...
+                </p>
+              )}
+              {lastRejectedScan && !processing && !uploadingImage && (
                 <p className="text-xs text-red-600 mb-4 font-medium">
                   ❌ Rejected: {lastRejectedScan}
                 </p>
               )}
-              {scanning && !processing && !lastRejectedScan && (
+              {scanning && !processing && !lastRejectedScan && !uploadingImage && (
                 <p className="text-xs text-green-600 mb-4">
                   📹 Camera active - Scan registration QR code only
                 </p>
               )}
-              {!scanning && !error && !processing && (
+              {!scanning && !error && !processing && !uploadingImage && (
                 <p className="text-xs text-yellow-600 mb-4">
                   📷 Camera starting up...
                 </p>
@@ -395,18 +470,37 @@ const QRScanner = ({ eventId, isOpen, onClose, onSuccess, mode = 'checkin' }) =>
           </div>
 
           <div className="space-y-3">
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={handleManualEntry}
-                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
-                disabled={processing}
+                onClick={handleUploadClick}
+                className="px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium text-sm flex items-center gap-2 justify-center"
+                disabled={processing || uploadingImage}
               >
-                Manual Entry
+                {uploadingImage ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Upload QR
+                  </>
+                )}
               </button>
               <button
                 onClick={handleTestScan}
                 className="px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors font-medium text-sm"
-                disabled={processing}
+                disabled={processing || uploadingImage}
               >
                 Test Scan
               </button>
@@ -419,7 +513,7 @@ const QRScanner = ({ eventId, isOpen, onClose, onSuccess, mode = 'checkin' }) =>
                   setTimeout(startScanning, 100);
                 }}
                 className="flex-1 px-4 py-2 border border-cyan-600 text-cyan-600 rounded-lg hover:bg-cyan-50 transition-colors font-medium"
-                disabled={processing}
+                disabled={processing || uploadingImage}
               >
                 Restart Camera
               </button>

@@ -17,19 +17,8 @@ import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Profile from "./pages/Profile";
-import OrganizationProfile from "./pages/OrganizationProfile";
-import { useAuth } from "./context/AuthContext";
-import Donations from "./pages/Donations";
-
-// Helper component to switch profile page based on user role from AuthContext
-function ProfileSwitcher() {
-  const { currentUser } = useAuth();
-  if (currentUser && currentUser.role === "org") {
-    return <OrganizationProfile />;
-  }
-  return <Profile />;
-}
-
+import Organization from "./pages/Organization";
+import Donations from "./pages/Donations"; // ✅ import Donations page
 
 // Temporary placeholder component for missing pages
 const ComingSoon = ({ pageName }) => (
@@ -133,7 +122,15 @@ function App() {
             path="/profile"
             element={
               <PrivateRoute>
-                <ProfileSwitcher />
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/organization/:id"
+            element={
+              <PrivateRoute>
+                <Organization />
               </PrivateRoute>
             }
           />

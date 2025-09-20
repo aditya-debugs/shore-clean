@@ -1,45 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Waves, LogOut, User, Settings } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Menu, X, Waves, LogOut, User, Settings } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import {
+  isOrganizer,
+  isVolunteer,
+  getNavigationItems,
+  getProfilePath,
+} from "../utils/roleUtils";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
   const { currentUser, logout } = useAuth();
   const isAuthenticated = !!currentUser;
-  const isOrganizer = currentUser?.role === 'organizer';
+  const userIsOrganizer = isOrganizer(currentUser);
+  const userIsVolunteer = isVolunteer(currentUser);
+  const navigationItems = getNavigationItems(currentUser);
+  const profilePath = getProfilePath(currentUser);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToTestimonials = () => {
-    const testimonialsSection = document.getElementById('testimonials');
+    // If we're not on the home page, navigate to home first
+    if (location.pathname !== "/") {
+      navigate("/", { state: { scrollToTestimonials: true } });
+      return;
+    }
+
+    // If we're on home page, scroll to testimonials
+    const testimonialsSection = document.getElementById("testimonials");
     if (testimonialsSection) {
-      testimonialsSection.scrollIntoView({ behavior: 'smooth' });
+      testimonialsSection.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   return (
-    <nav className={`fixed top-0 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
-      scrolled ? 'mt-2' : 'mt-6'
-    }`}>
-      <div className={`w-screen max-w-4xl mx-auto px-6 py-4 rounded-2xl backdrop-blur-lg transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/90 shadow-lg border border-cyan-100' 
-          : 'bg-white/80 shadow-md border border-cyan-50'
-      }`}>
+    <nav
+      className={`fixed top-0 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
+        scrolled ? "mt-2" : "mt-6"
+      }`}
+    >
+      <div
+        className={`w-screen max-w-4xl mx-auto px-6 py-4 rounded-2xl backdrop-blur-lg transition-all duration-300 ${
+          scrolled
+            ? "bg-white/90 shadow-lg border border-cyan-100"
+            : "bg-white/80 shadow-md border border-cyan-50"
+        }`}
+      >
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group cursor-pointer">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 group cursor-pointer"
+          >
             <div className="relative">
               <Waves className="h-8 w-8 text-cyan-600 group-hover:text-cyan-700 transition-colors duration-300" />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
@@ -53,19 +77,11 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-1">
             {isAuthenticated ? (
               <>
-                {[
-                  ...(isOrganizer ? [
-                    { name: 'Create Event', path: '/admin/create-event' },
-                    { name: 'Dashboard', path: '/admin/dashboard' }
-                  ] : [
-                    { name: 'Events', path: '/events' },
-                    { name: 'Testimonials', onClick: scrollToTestimonials }
-                  ])
-                ].map((item) => (
-                  item.onClick ? (
+                {navigationItems.map((item) =>
+                  item.onClick === "scrollToTestimonials" ? (
                     <button
                       key={item.name}
-                      onClick={item.onClick}
+                      onClick={scrollToTestimonials}
                       className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group"
                     >
                       {item.name}
@@ -75,15 +91,19 @@ const Navbar = () => {
                     <Link
                       key={item.name}
                       to={item.path}
-                      className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group"
+                      className={`px-4 py-2 rounded-xl transition-all duration-300 font-medium relative group ${
+                        item.isCtaButton
+                          ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg hover:shadow-xl hover:scale-105"
+                          : "text-gray-700 hover:text-cyan-600 hover:bg-cyan-50"
+                      }`}
                     >
                       {item.name}
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
+                      {!item.isCtaButton && (
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
+                      )}
                     </Link>
                   )
-                ))}
-                
-
+                )}
 
                 {/* User Menu */}
                 <div className="relative ml-4">
@@ -92,25 +112,27 @@ const Navbar = () => {
                     className="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-cyan-50 transition-all duration-300"
                   >
                     <User className="w-8 h-8 text-cyan-600" />
-                    <span className="text-gray-700 font-medium">{currentUser?.name || 'User'}</span>
+                    <span className="text-gray-700 font-medium">
+                      {currentUser?.name || "User"}
+                    </span>
                   </button>
-                  
+
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                       <Link
-                        to={isOrganizer ? "/admin/org-profile" : "/profile"}
+                        to={profilePath}
                         className="flex items-center px-4 py-2 text-gray-700 hover:bg-cyan-50 transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="h-4 w-4 mr-3" />
                         Profile
                       </Link>
-                      
+
                       <button
                         onClick={() => {
                           logout();
                           setShowUserMenu(false);
-                          navigate('/', { replace: true });
+                          navigate("/login", { replace: true });
                         }}
                         className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
                       >
@@ -124,8 +146,8 @@ const Navbar = () => {
             ) : (
               <>
                 {[
-                  { name: 'About', path: '/about' }, 
-                  { name: 'Impact', path: '/impact' }
+                  { name: "About", path: "/about" },
+                  { name: "Impact", path: "/impact" },
                 ].map((item) => (
                   <Link
                     key={item.name}
@@ -136,13 +158,13 @@ const Navbar = () => {
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
                   </Link>
                 ))}
-                <Link 
+                <Link
                   to="/login"
                   className="ml-4 px-4 py-2 text-gray-700 hover:text-cyan-600 transition-colors font-medium"
                 >
                   Sign In
                 </Link>
-                <Link 
+                <Link
                   to="/register"
                   className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:from-cyan-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
                 >
@@ -157,7 +179,11 @@ const Navbar = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-cyan-50 transition-colors duration-300"
           >
-            {isMenuOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6 text-gray-700" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-700" />
+            )}
           </button>
         </div>
 
@@ -168,23 +194,16 @@ const Navbar = () => {
               {isAuthenticated ? (
                 <>
                   {[
-                    ...(isOrganizer ? [
-                      { name: 'Create Event', path: '/admin/create-event' },
-                      { name: 'Dashboard', path: '/admin/dashboard' },
-                      { name: 'Profile', path: '/admin/org-profile' }
-                    ] : [
-                      { name: 'Events', path: '/events' },
-                      { name: 'Testimonials', onClick: () => {
-                        setIsMenuOpen(false);
-                        scrollToTestimonials();
-                      }},
-                      { name: 'Profile', path: '/profile' }
-                    ])
-                  ].map((item) => (
-                    item.onClick ? (
+                    ...navigationItems,
+                    { name: "Profile", path: profilePath },
+                  ].map((item) =>
+                    item.onClick === "scrollToTestimonials" ? (
                       <button
                         key={item.name}
-                        onClick={item.onClick}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          scrollToTestimonials();
+                        }}
                         className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 text-left w-full"
                       >
                         {item.name}
@@ -193,19 +212,23 @@ const Navbar = () => {
                       <Link
                         key={item.name}
                         to={item.path}
-                        className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
+                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                          item.isCtaButton
+                            ? "bg-cyan-600 text-white hover:bg-cyan-700 mx-4"
+                            : "text-gray-700 hover:text-cyan-600 hover:bg-cyan-50"
+                        }`}
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
                       </Link>
                     )
-                  ))}
+                  )}
 
-                  <button 
+                  <button
                     onClick={() => {
                       logout();
                       setIsMenuOpen(false);
-                      navigate('/', { replace: true });
+                      navigate("/login", { replace: true });
                     }}
                     className="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-300 mx-4 text-left"
                   >
@@ -215,8 +238,8 @@ const Navbar = () => {
               ) : (
                 <>
                   {[
-                    { name: 'About', path: '/about' }, 
-                    { name: 'Impact', path: '/impact' }
+                    { name: "About", path: "/about" },
+                    { name: "Impact", path: "/impact" },
                   ].map((item) => (
                     <Link
                       key={item.name}
@@ -227,14 +250,14 @@ const Navbar = () => {
                       {item.name}
                     </Link>
                   ))}
-                  <Link 
+                  <Link
                     to="/login"
                     className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Sign In
                   </Link>
-                  <Link 
+                  <Link
                     to="/register"
                     className="mt-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 mx-4 text-center block"
                     onClick={() => setIsMenuOpen(false)}

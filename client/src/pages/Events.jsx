@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getEvents, rsvpForEvent, cancelRsvpForEvent } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import { canCreateEvents, isOrganizer, isVolunteer } from "../utils/roleUtils";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "../index.css";
@@ -32,10 +33,11 @@ const Events = () => {
       try {
         const params = { page, limit };
 
-        // If user is an organizer (role 'org'), only show their events
-        if (currentUser && currentUser.role === "org") {
+        // If user is an organizer, only show their events
+        if (isOrganizer(currentUser)) {
           params.organizer = currentUser._id;
         }
+        // Volunteers see all events
 
         const data = await getEvents(params);
         setEvents(data.events || []);
@@ -86,14 +88,15 @@ const Events = () => {
           </button>
 
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900">
-            Upcoming{" "}
+            {isOrganizer(currentUser) ? "My" : "Upcoming"}{" "}
             <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
               Events
             </span>
           </h1>
           <p className="text-lg text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            Discover and join coastal clean-up events near you. RSVP to secure
-            your spot and make an impact!
+            {isOrganizer(currentUser)
+              ? "Manage your organization's coastal clean-up events and track their impact."
+              : "Discover and join coastal clean-up events near you. RSVP to secure your spot and make an impact!"}
           </p>
 
           {loading && (
@@ -126,11 +129,13 @@ const Events = () => {
               <p className="text-gray-500 mb-6">
                 Check back later for new coastal cleanup events.
               </p>
-              <Link to="/admin/create-event">
-                <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
-                  Create Event
-                </button>
-              </Link>
+              {canCreateEvents(currentUser) && (
+                <Link to="/admin/create-event">
+                  <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
+                    Create Event
+                  </button>
+                </Link>
+              )}
             </div>
           )}
 
@@ -190,14 +195,17 @@ const Events = () => {
                       </div>
                     </div>
                   </Link>
-                  <Link
-                    to={`/admin/create-event?edit=${event._id}`}
-                    className="absolute top-4 left-4 z-10"
-                  >
-                    <button className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold shadow hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 text-xs cursor-pointer">
-                      Update Event
-                    </button>
-                  </Link>
+                  {/* Only show Update Event button for organizers viewing their own events */}
+                  {isOrganizer(currentUser) && (
+                    <Link
+                      to={`/admin/create-event?edit=${event._id}`}
+                      className="absolute top-4 left-4 z-10"
+                    >
+                      <button className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold shadow hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 text-xs cursor-pointer">
+                        Update Event
+                      </button>
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>

@@ -13,7 +13,7 @@ import {
   QrCode,
   Download,
   CheckCircle,
-   Star,
+  Star,
   Heart,
   Trash2,
 } from "lucide-react";
@@ -151,10 +151,14 @@ const EventDetails = () => {
       const result = await registerForEvent(event._id);
       setRegistration(result.registration);
       setShowQR(true);
-      alert("Successfully registered for the event! Your QR code has been generated.");
+      alert(
+        "Successfully registered for the event! Your QR code has been generated."
+      );
     } catch (error) {
       console.error("Registration error:", error);
-      const message = error.response?.data?.message || "Could not register for event. Please try again.";
+      const message =
+        error.response?.data?.message ||
+        "Could not register for event. Please try again.";
       alert(message);
     } finally {
       setRegistrationLoading(false);
@@ -164,7 +168,9 @@ const EventDetails = () => {
   const handleCancelRegistration = async () => {
     if (!event || !currentUser || !registration) return;
 
-    const confirmCancel = window.confirm("Are you sure you want to cancel your registration for this event?");
+    const confirmCancel = window.confirm(
+      "Are you sure you want to cancel your registration for this event?"
+    );
     if (!confirmCancel) return;
 
     try {
@@ -174,15 +180,17 @@ const EventDetails = () => {
       alert("Your registration has been cancelled.");
     } catch (error) {
       console.error("Cancel registration error:", error);
-      const message = error.response?.data?.message || "Could not cancel registration. Please try again.";
+      const message =
+        error.response?.data?.message ||
+        "Could not cancel registration. Please try again.";
       alert(message);
     }
   };
 
   const downloadQR = () => {
-    const canvas = document.querySelector('#qr-code canvas');
+    const canvas = document.querySelector("#qr-code canvas");
     if (canvas) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.download = `event-${event.title}-qr.png`;
       link.href = canvas.toDataURL();
       link.click();
@@ -592,37 +600,59 @@ const EventDetails = () => {
                         <Users className="h-5 w-5 text-cyan-600" />
                         Volunteer Registration
                       </h3>
-                      
+
                       {registration ? (
                         <div className="space-y-4">
                           <div className="flex items-center gap-2 text-green-600 mb-4">
                             <CheckCircle className="h-5 w-5" />
-                            <span className="font-medium">You are registered for this event!</span>
+                            <span className="font-medium">
+                              You are registered for this event!
+                            </span>
                           </div>
-                          
+
                           {/* Registration Status */}
                           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                               <div>
-                                <p className="text-sm text-gray-600">Status: <span className="font-medium text-green-700 capitalize">{registration.status}</span></p>
-                                <p className="text-sm text-gray-600">Registered: {new Date(registration.createdAt).toLocaleDateString()}</p>
+                                <p className="text-sm text-gray-600">
+                                  Status:{" "}
+                                  <span className="font-medium text-green-700 capitalize">
+                                    {registration.status}
+                                  </span>
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Registered:{" "}
+                                  {new Date(
+                                    registration.createdAt
+                                  ).toLocaleDateString()}
+                                </p>
                                 {registration.checkedInAt && (
-                                  <p className="text-sm text-gray-600">Checked In: {new Date(registration.checkedInAt).toLocaleString()}</p>
+                                  <p className="text-sm text-gray-600">
+                                    Checked In:{" "}
+                                    {new Date(
+                                      registration.checkedInAt
+                                    ).toLocaleString()}
+                                  </p>
                                 )}
                                 {registration.checkedOutAt && (
-                                  <p className="text-sm text-gray-600">Checked Out: {new Date(registration.checkedOutAt).toLocaleString()}</p>
+                                  <p className="text-sm text-gray-600">
+                                    Checked Out:{" "}
+                                    {new Date(
+                                      registration.checkedOutAt
+                                    ).toLocaleString()}
+                                  </p>
                                 )}
                               </div>
-                              
+
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => setShowQR(!showQR)}
                                   className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
                                 >
                                   <QrCode className="h-4 w-4" />
-                                  {showQR ? 'Hide QR Code' : 'Show QR Code'}
+                                  {showQR ? "Hide QR Code" : "Show QR Code"}
                                 </button>
-                                
+
                                 <button
                                   onClick={handleCancelRegistration}
                                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
@@ -632,21 +662,27 @@ const EventDetails = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* QR Code Display */}
                           {showQR && registration.qrCode && (
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                              <h4 className="text-lg font-medium text-gray-900 mb-4">Your Event QR Code</h4>
-                              <div className="flex justify-center mb-4" id="qr-code">
-                                <QRCode 
-                                  value={registration.qrCode} 
+                              <h4 className="text-lg font-medium text-gray-900 mb-4">
+                                Your Event QR Code
+                              </h4>
+                              <div
+                                className="flex justify-center mb-4"
+                                id="qr-code"
+                              >
+                                <QRCode
+                                  value={registration.qrCode}
                                   size={200}
                                   level="M"
                                   includeMargin={true}
                                 />
                               </div>
                               <p className="text-sm text-gray-600 mb-4">
-                                Present this QR code to event organizers for check-in and check-out.
+                                Present this QR code to event organizers for
+                                check-in and check-out.
                               </p>
                               <button
                                 onClick={downloadQR}
@@ -661,14 +697,17 @@ const EventDetails = () => {
                       ) : (
                         <div className="text-center">
                           <p className="text-gray-600 mb-4">
-                            Register as a volunteer for this event to receive your unique QR code for check-in.
+                            Register as a volunteer for this event to receive
+                            your unique QR code for check-in.
                           </p>
                           <button
                             onClick={handleRegister}
                             disabled={registrationLoading}
                             className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-400 text-white rounded-lg font-semibold transition-colors duration-200"
                           >
-                            {registrationLoading ? 'Registering...' : 'Register as Volunteer'}
+                            {registrationLoading
+                              ? "Registering..."
+                              : "Register as Volunteer"}
                           </button>
                         </div>
                       )}

@@ -1,5 +1,5 @@
 import React from "react";
-import DonationSuccess from './pages/DonationSuccess';
+import DonationSuccess from "./pages/DonationSuccess";
 import {
   Route,
   Routes,
@@ -13,6 +13,7 @@ import EventDetails from "./pages/EventDetails";
 import CreateEvent from "./pages/admin/CreateEvent";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Profile from "./pages/Profile";
@@ -63,11 +64,18 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin/create-event" element={<CreateEvent />} />
           <Route path="/donation-success" element={<DonationSuccess />} />
           <Route path="/success" element={<DonationSuccess />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/admin/create-event"
+            element={
+              <PrivateRoute>
+                <CreateEvent />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/events"
             element={
@@ -99,6 +107,16 @@ function App() {
             element={
               <PrivateRoute>
                 <Donations />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Chat Community Route */}
+          <Route
+            path="/chat"
+            element={
+              <PrivateRoute>
+                <ChatCommunity />
               </PrivateRoute>
             }
           />

@@ -19,6 +19,12 @@ const groupSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    communityId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Community",
+      required: true,
+      index: true,
+    },
     type: {
       type: String,
       enum: ["event", "general", "announcements", "certificates", "custom"],

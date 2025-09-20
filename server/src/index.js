@@ -16,6 +16,7 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const communityRoutes = require("./routes/communityRoutes");
 const webhookRoutes = require("./routes/webhookRoutes");
 const commentRoutes = require("./routes/commentRoutes.js");
 
@@ -74,6 +75,7 @@ app.use("/api/groups", groupRoutes);
 // Organization profile routes
 const organizationRoutes = require("./routes/organizationRoutes");
 app.use("/api/organizations", organizationRoutes);
+app.use("/api/communities", communityRoutes);
 
 // Initialize Socket.io handlers for real-time chat
 initializeSocketHandlers(io);

@@ -19,10 +19,12 @@ import {
   Loader,
   Quote,
   LogIn,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { getEvents } from "../utils/api";
 
 const Home = () => {
   const [quotes, setQuotes] = useState([]);
@@ -154,17 +156,21 @@ const Home = () => {
         gradient: "from-indigo-400 to-blue-400",
       },
     ]);
+    
     // Fetch events from MongoDB API
-    fetch('/api/events')
-      .then(res => res.json())
-      .then(data => {
-        setUpcomingEvents(data);
+    const fetchEvents = async () => {
+      try {
+        const data = await getEvents({ limit: 6 }); // Limit to 6 events for home page
+        setUpcomingEvents(data.events || data || []);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Error fetching events:", error);
         setUpcomingEvents([]);
         setLoading(false);
-      });
+      }
+    };
+    
+    fetchEvents();
   }, []);
 
   useEffect(() => {
@@ -284,19 +290,46 @@ const Home = () => {
           {/* CTA Buttons */}
           {isAuthenticated && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
+              <Link
                 to="/events"
                 className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-50 hover:text-cyan-900"
               >
                 <Calendar className="h-5 w-5 mr-2" />
                 Browse Events
               </Link>
-              <Link 
+              <Link
+                to="/chat"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:from-green-600 hover:to-emerald-600"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Chat Community
+              </Link>
+              <Link
                 to="/dashboard"
                 className="px-8 py-4 bg-cyan-600/90 text-white rounded-xl border border-cyan-500/50 font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-700"
               >
                 <Trophy className="h-5 w-5 mr-2" />
                 My Dashboard
+              </Link>
+            </div>
+          )}
+
+          {/* CTA Buttons for Non-Authenticated Users */}
+          {!isAuthenticated && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="px-8 py-4 bg-white/90 text-cyan-700 rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:bg-cyan-50 hover:text-cyan-900"
+              >
+                <Users className="h-5 w-5 mr-2" />
+                Join Our Community
+              </Link>
+              <Link
+                to="/login"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl shadow-lg font-semibold flex items-center justify-center transition-all duration-300 hover:scale-105 hover:from-green-600 hover:to-emerald-600"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Access Chat Community
               </Link>
             </div>
           )}
@@ -320,11 +353,11 @@ const Home = () => {
           </div>
           {upcomingEvents.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {upcomingEvents.map((event) => (
+              {upcomingEvents.map((event, idx) => (
                 <div
-                  key={event.id}
+                  key={event._id}
                   className="bg-white rounded-xl shadow-lg transition-all duration-500 overflow-hidden border border-gray-100 group transform hover:scale-105 hover:shadow-2xl hover:border-cyan-400 animate-fade-in"
-                  style={{ animationDelay: `${event.id * 80}ms` }}
+                  style={{ animationDelay: `${idx * 80}ms` }}
                 >
                   <div
                     className="h-48 bg-cover bg-center relative"
@@ -357,19 +390,22 @@ const Home = () => {
                         <div className="flex items-center text-cyan-500">
                           <Users className="h-4 w-4 mr-1" />
                           <span className="text-sm font-medium">
-                            {event.participants} joined
+                            {event.attendees?.length || 0} joined
                           </span>
                         </div>
                         <div className="text-xs text-gray-500">
-                          by {event.organizer}
+                          by {event.organizer?.name || "Organizer"}
                         </div>
                       </div>
                     </div>
 
                     {isAuthenticated ? (
-                      <button className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium">
-                        Join Event
-                      </button>
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="w-full mt-4 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors duration-300 font-medium text-center block"
+                      >
+                        View Details
+                      </Link>
                     ) : (
                       <Link
                         to="/register"
@@ -394,7 +430,6 @@ const Home = () => {
             </div>
           )}
           <div className="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
-            
             <Link to="/admin/create-event">
               <button className="inline-flex items-center px-8 py-3 bg-cyan-600 text-white rounded-xl font-bold shadow-lg hover:bg-cyan-700 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer">
                 Create Event
@@ -406,7 +441,7 @@ const Home = () => {
                 to={isAuthenticated ? "/events" : "/register"}
                 className="inline-flex items-center px-8 py-3 bg-white border border-cyan-200 text-cyan-600 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 font-semibold"
               >
-                {isAuthenticated ? "View More Events" : "Join to See Events"}
+                {isAuthenticated ? "View My Events" : "Join to See Events"}
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
             </div>
@@ -456,8 +491,8 @@ const Home = () => {
         </div>
       </section>
 
-  {/* Testimonials Section */}
-  <section id="testimonials" className="py-20 px-6 bg-white/80">
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 px-6 bg-white/80">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-800 mb-4">
@@ -521,14 +556,12 @@ const Home = () => {
         </div>
         {/* Donation & Dashboard Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-          
-          <Link 
+          <Link
             to="/dashboard"
             className="px-8 py-4 bg-cyan-600 text-white rounded-xl font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105 hover:bg-cyan-700 ml-0 sm:ml-4"
           >
             Go to Dashboard
           </Link>
-          
         </div>
       </section>
 
@@ -552,7 +585,6 @@ const Home = () => {
               >
                 {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
               </Link>
-              
             </div>
           </div>
         </div>

@@ -15,30 +15,17 @@ const saveMessage = async (
   try {
     let senderName = "Unknown User";
 
-    // Handle demo/mock users
-    const demoUsers = {
-      user1: "Alice Johnson",
-      user2: "Bob Smith",
-      user3: "Carol Davis",
-      user4: "David Wilson",
-      user5: "Eve Martinez",
-    };
-
-    if (demoUsers[senderId]) {
-      senderName = demoUsers[senderId];
-    } else {
-      // Get sender information from database for real users
-      try {
-        const sender = await User.findById(senderId).select("name");
-        if (sender) {
-          senderName = sender.name;
-        } else {
-          senderName = "Demo User";
-        }
-      } catch (err) {
-        // If senderId is not a valid ObjectId, treat as demo user
-        senderName = "Demo User";
+    // Get sender information from database
+    try {
+      const sender = await User.findById(senderId).select("name");
+      if (sender) {
+        senderName = sender.name;
+      } else {
+        senderName = "Unknown User";
       }
+    } catch (err) {
+      console.warn("Could not find user:", senderId);
+      senderName = "Unknown User";
     }
 
     // Verify group exists (skip user access check for demo)

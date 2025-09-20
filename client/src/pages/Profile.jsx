@@ -1,23 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { User, Mail, Calendar, Shield, Edit, Save, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../utils/api";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import {
+  User,
+  Mail,
+  Calendar,
+  Shield,
+  Edit,
+  Save,
+  X,
+  ArrowLeft,
+} from "lucide-react";
 
 const Profile = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState({
-    name: '',
-    email: '',
-    role: ''
+    name: "",
+    email: "",
+    role: "",
   });
 
   useEffect(() => {
@@ -27,22 +36,22 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/auth/profile');
+      const response = await api.get("/auth/profile");
       setProfileData(response.data);
       setEditData({
         name: response.data.name,
         email: response.data.email,
-        role: response.data.role
+        role: response.data.role,
       });
-      setError('');
+      setError("");
     } catch (err) {
       if (err.response?.status === 401) {
-        setError('Your session has expired. Please login again.');
+        setError("Your session has expired. Please login again.");
         logout();
       } else {
-        setError('Failed to load profile data');
+        setError("Failed to load profile data");
       }
-      console.error('Profile fetch error:', err);
+      console.error("Profile fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -53,7 +62,7 @@ const Profile = () => {
       setEditData({
         name: profileData.name,
         email: profileData.email,
-        role: profileData.role
+        role: profileData.role,
       });
     }
     setIsEditing(!isEditing);
@@ -64,9 +73,9 @@ const Profile = () => {
       const submitData = {
         name: editData.name,
         email: editData.email,
-        role: editData.role
+        role: editData.role,
       };
-      const response = await api.put('/auth/profile', submitData);
+      const response = await api.put("/auth/profile", submitData);
       setProfileData(response.data);
       if (response.data.profileImage) {
         setProfileImage(null); // clear file input
@@ -75,36 +84,40 @@ const Profile = () => {
       setShowModal(true);
       setTimeout(() => {
         setShowModal(false);
-        navigate('/profile');
+        navigate("/profile");
       }, 1500);
     } catch (err) {
-      setError('Failed to update profile');
-      console.error('Profile update error:', err);
+      setError("Failed to update profile");
+      console.error("Profile update error:", err);
     }
   };
 
   const getRoleBadge = (role) => {
     const roleStyles = {
-      org: 'bg-purple-100 text-purple-800 border-purple-200',
-      user: 'bg-blue-100 text-blue-800 border-blue-200'
+      org: "bg-purple-100 text-purple-800 border-purple-200",
+      user: "bg-blue-100 text-blue-800 border-blue-200",
     };
     const roleNames = {
-      org: 'Organizer',
-      user: 'Volunteer'
+      org: "Organizer",
+      user: "Volunteer",
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${roleStyles[role] || roleStyles.user}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${
+          roleStyles[role] || roleStyles.user
+        }`}
+      >
         <Shield className="w-4 h-4 inline mr-1" />
-        {roleNames[role] || 'Volunteer'}
+        {roleNames[role] || "Volunteer"}
       </span>
     );
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -122,29 +135,42 @@ const Profile = () => {
 
   return (
     <>
-      
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-cyan-900 bg-opacity-60 z-50 transition-all duration-300">
           <div className="bg-gradient-to-br from-cyan-50 to-blue-100 border-2 border-cyan-400 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center animate-fade-in">
             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-cyan-100 mb-4 border-2 border-cyan-300">
               <Save className="w-8 h-8 text-cyan-600" />
             </div>
-            <h2 className="text-3xl font-bold text-cyan-700 mb-2">Profile Updated</h2>
-            <p className="text-lg text-gray-700 mb-4">Your changes have been saved successfully.</p>
+            <h2 className="text-3xl font-bold text-cyan-700 mb-2">
+              Profile Updated
+            </h2>
+            <p className="text-lg text-gray-700 mb-4">
+              Your changes have been saved successfully.
+            </p>
             <div className="w-full flex justify-center">
               <span className="inline-block w-24 h-1 rounded bg-gradient-to-r from-cyan-400 to-blue-400"></span>
             </div>
           </div>
         </div>
       )}
+      <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back to Home Button */}
+          <Link
+            to="/"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors mb-6"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+
           {error && (
             <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
               <p>{error}</p>
-              {error.includes('session has expired') && (
+              {error.includes("session has expired") && (
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate("/login")}
                   className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
                 >
                   Go to Login
@@ -162,7 +188,7 @@ const Profile = () => {
                   </div>
                   <div className="text-white">
                     <h1 className="text-3xl font-bold">
-                      {profileData?.name || currentUser?.name || 'User'}
+                      {profileData?.name || currentUser?.name || "User"}
                     </h1>
                     <p className="text-cyan-100 mt-1">
                       {profileData?.email || currentUser?.email}
@@ -180,7 +206,9 @@ const Profile = () => {
             {/* Personal Information */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Personal Information</h2>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Personal Information
+                </h2>
                 <button
                   onClick={isEditing ? handleSave : handleEditToggle}
                   className="flex items-center space-x-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors duration-200"
@@ -208,9 +236,7 @@ const Profile = () => {
                 )}
               </div>
               <div className="space-y-4">
-                <div>
-                  {/* Profile picture removed */}
-                </div>
+                <div>{/* Profile picture removed */}</div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <User className="w-4 h-4 inline mr-2" />
@@ -220,12 +246,16 @@ const Profile = () => {
                     <input
                       type="text"
                       value={editData.name}
-                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                      onChange={(e) =>
+                        setEditData({ ...editData, name: e.target.value })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                   ) : (
                     <p className="text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">
-                      {profileData?.name || currentUser?.name || 'Not specified'}
+                      {profileData?.name ||
+                        currentUser?.name ||
+                        "Not specified"}
                     </p>
                   )}
                 </div>
@@ -238,12 +268,16 @@ const Profile = () => {
                     <input
                       type="email"
                       value={editData.email}
-                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      onChange={(e) =>
+                        setEditData({ ...editData, email: e.target.value })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                   ) : (
                     <p className="text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">
-                      {profileData?.email || currentUser?.email || 'Not specified'}
+                      {profileData?.email ||
+                        currentUser?.email ||
+                        "Not specified"}
                     </p>
                   )}
                 </div>
@@ -255,7 +289,9 @@ const Profile = () => {
                   {isEditing ? (
                     <select
                       value={editData.role}
-                      onChange={(e) => setEditData({ ...editData, role: e.target.value })}
+                      onChange={(e) =>
+                        setEditData({ ...editData, role: e.target.value })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white"
                     >
                       <option value="org">Organizer</option>
@@ -273,7 +309,9 @@ const Profile = () => {
                     Member Since
                   </label>
                   <p className="text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">
-                    {profileData?.createdAt ? formatDate(profileData.createdAt) : 'Unknown'}
+                    {profileData?.createdAt
+                      ? formatDate(profileData.createdAt)
+                      : "Unknown"}
                   </p>
                 </div>
               </div>
@@ -282,7 +320,7 @@ const Profile = () => {
           {/* Actions */}
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold shadow-md transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             >
               Back to Home
@@ -291,12 +329,11 @@ const Profile = () => {
               onClick={logout}
               className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold shadow-md transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
             >
-              Logout
+              Sign Out
             </button>
           </div>
         </div>
       </div>
-      
     </>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Calendar,
   Users,
@@ -10,6 +10,7 @@ import {
   Edit3,
   Save,
   X,
+  User,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -24,6 +25,7 @@ import {
   cancelRsvpForEvent,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import { canEditEvent, canRSVPToEvents, isVolunteer } from "../utils/roleUtils";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -148,12 +150,7 @@ const EventDetails = () => {
   };
 
   // Helper function to check if current user can edit/delete the event
-  const canEditEvent =
-    currentUser &&
-    event &&
-    (currentUser._id === event.organizer?._id ||
-      currentUser._id === event.organizer ||
-      currentUser.role === "admin");
+  const canEditEventCheck = canEditEvent(currentUser, event);
 
   const handleRatingChange = async (newValue) => {
     setRating(newValue);
@@ -268,7 +265,7 @@ const EventDetails = () => {
                 </h1>
 
                 {/* Edit and Delete buttons for organizers/admins */}
-                {canEditEvent && (
+                {canEditEventCheck && (
                   <div className="flex gap-3">
                     {!isEditing ? (
                       <>
@@ -506,8 +503,23 @@ const EventDetails = () => {
                     </p>
                   </div>
 
-                  {/* RSVP Button */}
-                  {currentUser && currentUser.role !== "org" && (
+                  {/* View Organization Button for Volunteers */}
+                  {isVolunteer(currentUser) && event.organizer && (
+                    <div className="mb-8">
+                      <Link
+                        to={`/organization/${
+                          event.organizer._id || event.organizer
+                        }`}
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                      >
+                        <User className="h-5 w-5 mr-2" />
+                        View Organization
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* RSVP Button - Temporarily disabled */}
+                  {/* {canRSVPToEvents(currentUser) && (
                     <div className="mb-8">
                       {event.attendees?.includes(currentUser._id) ? (
                         <button
@@ -528,7 +540,7 @@ const EventDetails = () => {
                         {event.attendees?.length || 0} people have RSVP'd
                       </p>
                     </div>
-                  )}
+                  )} */}
                 </>
               )}
 
@@ -568,9 +580,9 @@ const EventDetails = () => {
                 </div>
               </div>
 
-              {/* RSVP */}
-              {userId &&
-                (event.attendees?.includes(userId) ? (
+              {/* RSVP - Temporarily disabled */}
+              {/* {canRSVPToEvents(currentUser) &&
+                (event.attendees?.includes(currentUser._id) ? (
                   <button
                     className="w-full mt-6 px-4 py-3 bg-cyan-100 text-cyan-600 rounded-xl border border-cyan-300 font-bold cursor-pointer hover:bg-cyan-200 transition-all duration-300 shadow-lg"
                     onClick={() => handleRSVP(true)}

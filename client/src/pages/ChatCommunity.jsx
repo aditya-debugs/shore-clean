@@ -1,8 +1,11 @@
 // ChatCommunity.jsx - Group-based real-time chat component for ShoreClean
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useSocket } from "../hooks/useSocket";
 import { chatAPI, groupsAPI } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 import MessageBubble from "../components/MessageBubble";
 import OnlineUsersList from "../components/OnlineUsersList";
 import TypingIndicator from "../components/TypingIndicator";
@@ -242,331 +245,94 @@ const ChatCommunity = () => {
   const messageGroups = groupMessagesByDate([...chatHistory, ...messages]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Community Chat
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Connect with fellow volunteers and organizers
-              </p>
-            </div>
-
-            {/* Header Actions */}
-            <div className="flex items-center space-x-3">
-              {/* Current User Display */}
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
-                <span>👤</span>
-                <span>{currentUser.name}</span>
-              </div>
-
-              {/* Connection Status */}
-              <div
-                className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
-                  isConnected
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                  }`}
-                ></div>
-                <span>{isConnected ? "Connected" : "Disconnected"}</span>
-              </div>
-
-              {/* Online Users Toggle */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-                  className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                >
-                  <div className="flex -space-x-1">
-                    {onlineUsers.slice(0, 3).map((user, index) => (
-                      <div
-                        key={user.userId}
-                        className="w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white"
-                      >
-                        {user.username.charAt(0).toUpperCase()}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-sm font-medium">
-                    {onlineUsers.length} online
-                  </span>
-                </button>
-
-                <OnlineUsersList
-                  users={onlineUsers}
-                  isVisible={showOnlineUsers}
-                  onToggle={() => setShowOnlineUsers(!showOnlineUsers)}
-                />
-              </div>
-
-              {/* Group Management Button (for organizers/admins) */}
-              {(currentUser.role === "organizer" ||
-                currentUser.role === "admin") && (
-                <button
-                  onClick={() => setShowGroupManagement(true)}
-                  className="flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium">Manage</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Group Navigation */}
-          {selectedGroup ? (
-            <div className="mt-6 flex items-center justify-between bg-gray-100 rounded-xl p-3">
-              <button
-                onClick={handleBackToGroups}
-                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <span>←</span>
-                <span className="text-sm">Back to Groups</span>
-              </button>
-              <div className="flex items-center space-x-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                  style={{ backgroundColor: selectedGroup.color || "#3B82F6" }}
-                >
-                  {selectedGroup.icon || "💬"}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {selectedGroup.name}
-                  </h3>
-                  <p className="text-xs text-gray-600">
-                    {selectedGroup.type === "event"
-                      ? "Event Group"
-                      : selectedGroup.type === "certificate"
-                      ? "Certificate Group"
-                      : "Discussion Group"}
-                  </p>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                {currentGroup?.userCount || selectedGroup.members?.length || 0}{" "}
-                members
-              </div>
-            </div>
-          ) : (
-            <div className="mt-6 bg-gray-100 rounded-xl p-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                🌊 {orgName} Community
-              </h3>
-              <p className="text-xs text-gray-600">
-                Select a group below to start chatting with members
-              </p>
-            </div>
-          )}
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 pt-20">
+        {/* Back to Home Button */}
+        <div className="max-w-4xl mx-auto px-4 pt-6">
+          <Link
+            to="/"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
         </div>
-      </div>
 
-      {/* Main Content Container */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {!selectedGroup ? (
-            /* Group Selection View */
-            <GroupList
-              orgId={orgId}
-              orgName={orgName}
-              onSelectGroup={handleGroupSelect}
-              currentUser={currentUser}
-              selectedGroupId={selectedGroup?._id}
-            />
-          ) : (
-            <>
-              {/* Chat Messages Area */}
-              <div
-                ref={chatContainerRef}
-                className="h-96 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <span className="ml-3 text-gray-600">
-                      Loading messages...
-                    </span>
-                  </div>
-                ) : chatHistory.length === 0 && messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-center">
-                    <div>
-                      <div className="text-4xl mb-3">💬</div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Start the conversation!
-                      </h3>
-                      <p className="text-gray-600 text-sm">
-                        Be the first to send a message in {selectedGroup.name}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {Object.entries(messageGroups).map(
-                      ([dateKey, dayMessages]) => (
-                        <div key={dateKey}>
-                          {/* Date Separator */}
-                          <div className="flex items-center justify-center my-6">
-                            <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-xs font-medium shadow-sm">
-                              {formatDate(new Date(dateKey))}
-                            </div>
-                          </div>
-
-                          {/* Messages for this date */}
-                          {dayMessages.map((message, index) => (
-                            <MessageBubble
-                              key={message._id || index}
-                              message={message}
-                              isCurrentUser={message.userId === currentUser._id}
-                              showSender={true}
-                              readReceipts={readReceipts.get(message._id) || []}
-                              onMarkAsRead={markAsRead}
-                            />
-                          ))}
-                        </div>
-                      )
-                    )}
-
-                    {/* Typing Indicator */}
-                    <TypingIndicator
-                      typingUsers={typingUsers}
-                      currentUserId={currentUser._id}
-                    />
-
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
+        {/* Header */}
+        <div className="bg-white shadow-lg border-b border-gray-100">
+          <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Community Chat
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Connect with fellow volunteers and organizers
+                </p>
               </div>
 
-              {/* Message Input Area */}
-              <div className="p-4 bg-white border-t border-gray-100">
-                {error && (
-                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-                    <svg
-                      className="w-5 h-5 text-red-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <p className="text-red-700 text-sm">{error}</p>
-                  </div>
-                )}
+              {/* Header Actions */}
+              <div className="flex items-center space-x-3">
+                {/* Current User Display */}
+                <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
+                  <span>👤</span>
+                  <span>{currentUser.name}</span>
+                </div>
 
-                {/* Quick Emoji Bar */}
-                {showEmojiPicker && (
-                  <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex flex-wrap gap-2">
-                      {quickEmojis.map((emoji) => (
-                        <button
-                          key={emoji}
-                          onClick={() => addEmoji(emoji)}
-                          className="text-lg hover:bg-gray-200 rounded-lg p-2 transition-colors"
+                {/* Connection Status */}
+                <div
+                  className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+                    isConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                    }`}
+                  ></div>
+                  <span>{isConnected ? "Connected" : "Disconnected"}</span>
+                </div>
+
+                {/* Online Users Toggle */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowOnlineUsers(!showOnlineUsers)}
+                    className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                  >
+                    <div className="flex -space-x-1">
+                      {onlineUsers.slice(0, 3).map((user, index) => (
+                        <div
+                          key={user.userId}
+                          className="w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white"
                         >
-                          {emoji}
-                        </button>
+                          {user.username.charAt(0).toUpperCase()}
+                        </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                    <span className="text-sm font-medium">
+                      {onlineUsers.length} online
+                    </span>
+                  </button>
 
-                {/* Selected File Preview */}
-                {selectedFile && (
-                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span>📄</span>
-                      <span className="text-sm text-gray-700">
-                        {selectedFile.name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setSelectedFile(null)}
-                      className="text-red-500 hover:text-red-600 text-sm"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
+                  <OnlineUsersList
+                    users={onlineUsers}
+                    isVisible={showOnlineUsers}
+                    onToggle={() => setShowOnlineUsers(!showOnlineUsers)}
+                  />
+                </div>
 
-                <form onSubmit={handleSendMessage} className="flex space-x-3">
-                  <div className="flex-1 relative">
-                    <textarea
-                      ref={inputRef}
-                      value={messageInput}
-                      onChange={handleInputChange}
-                      placeholder={`Message ${selectedGroup.name}...`}
-                      className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      rows="1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage(e);
-                        }
-                      }}
-                      disabled={!isConnected}
-                    />
-
-                    {/* File Upload Button */}
-                    <input
-                      type="file"
-                      id="file-upload"
-                      className="hidden"
-                      onChange={(e) => setSelectedFile(e.target.files[0])}
-                      accept="image/*,video/*,.pdf,.doc,.docx"
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="absolute right-10 top-3 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                    >
-                      📎
-                    </label>
-
-                    {/* Emoji Button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      😊
-                    </button>
-                  </div>
-
+                {/* Group Management Button (for organizers/admins) */}
+                {(currentUser.role === "organizer" ||
+                  currentUser.role === "admin") && (
                   <button
-                    type="submit"
-                    disabled={
-                      (!messageInput.trim() && !selectedFile) || !isConnected
-                    }
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+                    onClick={() => setShowGroupManagement(true)}
+                    className="flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -575,50 +341,309 @@ const ChatCommunity = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
                       />
                     </svg>
+                    <span className="text-sm font-medium">Manage</span>
                   </button>
-                </form>
+                )}
+              </div>
+            </div>
 
-                {/* Footer Info */}
-                <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-                  <span>Press Enter to send, Shift+Enter for new line</span>
-                  <div className="flex items-center space-x-2">
-                    <span>{onlineUsers.length} people online</span>
-                    <span>•</span>
-                    <span
-                      className={
-                        isConnected ? "text-green-600" : "text-red-600"
-                      }
-                    >
-                      {isConnected ? "Connected" : "Disconnected"}
-                    </span>
+            {/* Group Navigation */}
+            {selectedGroup ? (
+              <div className="mt-6 flex items-center justify-between bg-gray-100 rounded-xl p-3">
+                <button
+                  onClick={handleBackToGroups}
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <span>←</span>
+                  <span className="text-sm">Back to Groups</span>
+                </button>
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                    style={{
+                      backgroundColor: selectedGroup.color || "#3B82F6",
+                    }}
+                  >
+                    {selectedGroup.icon || "💬"}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {selectedGroup.name}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {selectedGroup.type === "event"
+                        ? "Event Group"
+                        : selectedGroup.type === "certificate"
+                        ? "Certificate Group"
+                        : "Discussion Group"}
+                    </p>
                   </div>
                 </div>
+                <div className="text-sm text-gray-500">
+                  {currentGroup?.userCount ||
+                    selectedGroup.members?.length ||
+                    0}{" "}
+                  members
+                </div>
               </div>
-            </>
-          )}
+            ) : (
+              <div className="mt-6 bg-gray-100 rounded-xl p-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  🌊 {orgName} Community
+                </h3>
+                <p className="text-xs text-gray-600">
+                  Select a group below to start chatting with members
+                </p>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Main Content Container */}
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            {!selectedGroup ? (
+              /* Group Selection View */
+              <GroupList
+                orgId={orgId}
+                orgName={orgName}
+                onSelectGroup={handleGroupSelect}
+                currentUser={currentUser}
+                selectedGroupId={selectedGroup?._id}
+              />
+            ) : (
+              <>
+                {/* Chat Messages Area */}
+                <div
+                  ref={chatContainerRef}
+                  className="h-96 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <span className="ml-3 text-gray-600">
+                        Loading messages...
+                      </span>
+                    </div>
+                  ) : chatHistory.length === 0 && messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-center">
+                      <div>
+                        <div className="text-4xl mb-3">💬</div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Start the conversation!
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          Be the first to send a message in {selectedGroup.name}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {Object.entries(messageGroups).map(
+                        ([dateKey, dayMessages]) => (
+                          <div key={dateKey}>
+                            {/* Date Separator */}
+                            <div className="flex items-center justify-center my-6">
+                              <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-xs font-medium shadow-sm">
+                                {formatDate(new Date(dateKey))}
+                              </div>
+                            </div>
+
+                            {/* Messages for this date */}
+                            {dayMessages.map((message, index) => (
+                              <MessageBubble
+                                key={message._id || index}
+                                message={message}
+                                isCurrentUser={
+                                  message.userId === currentUser._id
+                                }
+                                showSender={true}
+                                readReceipts={
+                                  readReceipts.get(message._id) || []
+                                }
+                                onMarkAsRead={markAsRead}
+                              />
+                            ))}
+                          </div>
+                        )
+                      )}
+
+                      {/* Typing Indicator */}
+                      <TypingIndicator
+                        typingUsers={typingUsers}
+                        currentUserId={currentUser._id}
+                      />
+
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
+
+                {/* Message Input Area */}
+                <div className="p-4 bg-white border-t border-gray-100">
+                  {error && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <p className="text-red-700 text-sm">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Quick Emoji Bar */}
+                  {showEmojiPicker && (
+                    <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex flex-wrap gap-2">
+                        {quickEmojis.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => addEmoji(emoji)}
+                            className="text-lg hover:bg-gray-200 rounded-lg p-2 transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected File Preview */}
+                  {selectedFile && (
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span>📄</span>
+                        <span className="text-sm text-gray-700">
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedFile(null)}
+                        className="text-red-500 hover:text-red-600 text-sm"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendMessage} className="flex space-x-3">
+                    <div className="flex-1 relative">
+                      <textarea
+                        ref={inputRef}
+                        value={messageInput}
+                        onChange={handleInputChange}
+                        placeholder={`Message ${selectedGroup.name}...`}
+                        className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        rows="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage(e);
+                          }
+                        }}
+                        disabled={!isConnected}
+                      />
+
+                      {/* File Upload Button */}
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        onChange={(e) => setSelectedFile(e.target.files[0])}
+                        accept="image/*,video/*,.pdf,.doc,.docx"
+                      />
+                      <label
+                        htmlFor="file-upload"
+                        className="absolute right-10 top-3 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                      >
+                        📎
+                      </label>
+
+                      {/* Emoji Button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        😊
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        (!messageInput.trim() && !selectedFile) || !isConnected
+                      }
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        />
+                      </svg>
+                    </button>
+                  </form>
+
+                  {/* Footer Info */}
+                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    <span>Press Enter to send, Shift+Enter for new line</span>
+                    <div className="flex items-center space-x-2">
+                      <span>{onlineUsers.length} people online</span>
+                      <span>•</span>
+                      <span
+                        className={
+                          isConnected ? "text-green-600" : "text-red-600"
+                        }
+                      >
+                        {isConnected ? "Connected" : "Disconnected"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Click outside handler for online users */}
+        {showOnlineUsers && (
+          <div
+            className="fixed inset-0 z-30"
+            onClick={() => setShowOnlineUsers(false)}
+          />
+        )}
+
+        {/* Group Management Modal */}
+        {showGroupManagement && (
+          <GroupManagement
+            orgId={orgId}
+            currentUser={currentUser}
+            onClose={() => setShowGroupManagement(false)}
+          />
+        )}
       </div>
-
-      {/* Click outside handler for online users */}
-      {showOnlineUsers && (
-        <div
-          className="fixed inset-0 z-30"
-          onClick={() => setShowOnlineUsers(false)}
-        />
-      )}
-
-      {/* Group Management Modal */}
-      {showGroupManagement && (
-        <GroupManagement
-          orgId={orgId}
-          currentUser={currentUser}
-          onClose={() => setShowGroupManagement(false)}
-        />
-      )}
-    </div>
+    </>
   );
 };
 

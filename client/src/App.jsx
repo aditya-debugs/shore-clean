@@ -17,6 +17,7 @@ import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Profile from "./pages/Profile";
+import Organization from "./pages/Organization";
 import Donations from "./pages/Donations"; // ✅ import Donations page
 
 // Temporary placeholder component for missing pages
@@ -122,6 +123,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/organization/:id"
+            element={
+              <PrivateRoute>
+                <Organization />
               </PrivateRoute>
             }
           />

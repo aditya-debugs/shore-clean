@@ -63,6 +63,9 @@ const EventDetails = () => {
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
+  // Comments state
+  const [comments, setComments] = useState([]);
+
   useEffect(() => {
     const fetchEventData = async () => {
       setLoading(true);
@@ -86,17 +89,6 @@ const EventDetails = () => {
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch(() => setComments([]));
-    // Fetch ratings from MongoDB
-    fetch(`/api/events/${id}/ratings`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRating(data.userRating || 0);
-        setAvgRating(data.avgRating || 0);
-      })
-      .catch(() => {
-        setRating(0);
-        setAvgRating(0);
-      });
 
     // Check registration status if user is a volunteer
     if (currentUser && isVolunteer(currentUser)) {

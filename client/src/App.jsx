@@ -12,6 +12,14 @@ import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
 import EventManagement from "./pages/EventManagement";
 import CreateEvent from "./pages/admin/CreateEvent";
+import AdminDashboard from "./pages/admin/Dashboard";
+import VolunteerDashboard from "./pages/volunteer/Dashboard";
+import Certificates from "./pages/Certificates";
+import VolunteerCertificates from "./pages/volunteer/Certificates";
+import MyEvents from "./pages/volunteer/MyEvents";
+import AdminVolunteers from "./pages/admin/Volunteers";
+import AdminOrgProfile from "./pages/admin/OrgProfile";
+import OrganizationProfile from "./pages/OrganizationProfile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ChatCommunity from "./pages/ChatCommunity";
@@ -110,11 +118,41 @@ function App() {
               }
             />
             <Route
+              path="/events/:id/manage"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <EventManagement />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/dashboard"
               element={
                 <PrivateRoute>
                   <OrganizationRoute>
-                    <ComingSoon pageName="Dashboard" />
+                    <AdminDashboard />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminDashboard />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/dashboard"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <VolunteerDashboard />
                   </OrganizationRoute>
                 </PrivateRoute>
               }
@@ -149,7 +187,57 @@ function App() {
               element={
                 <PrivateRoute>
                   <OrganizationRoute>
-                    <ComingSoon pageName="Certificates" />
+                    <Certificates />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/certificates"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <VolunteerCertificates />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/volunteer/my-events"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <MyEvents />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/volunteers"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminVolunteers />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <AdminOrgProfile />
+                  </OrganizationRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/organization-profile"
+              element={
+                <PrivateRoute>
+                  <OrganizationRoute>
+                    <OrganizationProfile />
                   </OrganizationRoute>
                 </PrivateRoute>
               }

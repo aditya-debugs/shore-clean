@@ -5,15 +5,22 @@ const Volunteer = require("../models/Volunteer");
 const createEvent = async (req, res) => {
   try {
     const data = req.body;
-  data.organizer = req.user.userId;
+    data.organizer = req.user.userId;
     const event = await Event.create(data);
     res.status(201).json(event);
   } catch (err) {
-    console.error('Event creation error:', err.message, '\nRequest body:', req.body);
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ message: 'Validation error', details: err.errors });
+    console.error(
+      "Event creation error:",
+      err.message,
+      "\nRequest body:",
+      req.body
+    );
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Validation error", details: err.errors });
     }
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -21,9 +28,12 @@ const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
     const event = await Event.findById(id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (event.organizer.toString() !== req.user.userId && req.user.role !== 'admin')
-      return res.status(403).json({ message: 'Forbidden' });
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (
+      event.organizer.toString() !== req.user.userId &&
+      req.user.role !== "admin"
+    )
+      return res.status(403).json({ message: "Forbidden" });
 
     Object.assign(event, req.body);
     await event.save();
@@ -72,13 +82,13 @@ const rsvpEvent = async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: "Event not found" });
 
-    if (event.attendees.includes(req.user.id))
+    if (event.attendees.includes(req.user.userId))
       return res.status(400).json({ message: "Already RSVP'd" });
 
     if (event.capacity && event.attendees.length >= event.capacity)
       return res.status(400).json({ message: "Event full" });
 
-    event.attendees.push(req.user.id);
+    event.attendees.push(req.user.userId);
     await event.save();
     res.json({ message: "RSVP successful", event });
   } catch (err) {
@@ -91,10 +101,10 @@ const cancelRsvp = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     event.attendees = event.attendees.filter(
-      (a) => a.toString() !== req.user.id
+      (a) => a.toString() !== req.user.userId
     );
     await event.save();
-    res.json({ message: "RSVP cancelled" });
+    res.json({ message: "RSVP cancelled", event });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
@@ -109,9 +119,9 @@ const deleteEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Optional: Check if user is the event creator (organizer)
+    // Check if user is the event creator (organizer) or admin
     if (
-      event.organizer.toString() !== req.user.id &&
+      event.organizer.toString() !== req.user.userId &&
       req.user.role !== "admin"
     ) {
       return res

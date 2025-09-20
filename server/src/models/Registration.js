@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require('uuid');
+const crypto = require("crypto");
 
 const registrationSchema = new mongoose.Schema(
   {
-    registrationId: { 
-      type: String, 
-      default: uuidv4, 
-      unique: true 
+    registrationId: {
+      type: String,
+      default: () => crypto.randomUUID(),
+      unique: true,
     },
     event: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,10 +22,10 @@ const registrationSchema = new mongoose.Schema(
       type: String, // store QR code data (or file URL if you generate image)
       required: true,
     },
-    status: { 
-      type: String, 
-      enum: ['registered', 'checked-in', 'checked-out', 'cancelled'], 
-      default: 'registered' 
+    status: {
+      type: String,
+      enum: ["registered", "checked-in", "checked-out", "cancelled"],
+      default: "registered",
     },
     checkedInAt: {
       type: Date,
@@ -35,17 +35,17 @@ const registrationSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    checkedInBy: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User' 
+    checkedInBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    checkedOutBy: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User' 
+    checkedOutBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    notes: { 
-      type: String 
-    }
+    notes: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

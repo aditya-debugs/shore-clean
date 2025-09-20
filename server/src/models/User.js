@@ -7,8 +7,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['user','admin','org'], default: 'user' },
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' }, // Only for organizer
   createdAt: { type: Date, default: Date.now },
-  // add other fields: organizationId, phone, etc.
+  // add other fields: phone, etc.
 });
 
 // Hash password before save

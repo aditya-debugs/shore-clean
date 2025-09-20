@@ -72,6 +72,9 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/groups", groupRoutes);
+// Organization profile routes
+const organizationRoutes = require("./routes/organizationRoutes");
+app.use("/api/organizations", organizationRoutes);
 app.use("/api/communities", communityRoutes);
 
 // Initialize Socket.io handlers for real-time chat

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 
 const initialState = {
@@ -167,6 +167,12 @@ const CreateEvent = () => {
 
 	return (
 		<div className="max-w-2xl mx-auto py-12 px-4 md:px-0 animate-fade-in">
+			{/* Back to Home Button */}
+			<div className="mb-6 flex justify-start">
+				<Link to="/events" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold shadow hover:bg-gray-300 transition-all duration-200">
+					← Back to Events
+				</Link>
+			</div>
 			<h1 className="text-3xl md:text-4xl font-bold text-cyan-700 mb-8 text-center">
 				{isEdit ? "Update Event" : "Create New Event"}
 			</h1>

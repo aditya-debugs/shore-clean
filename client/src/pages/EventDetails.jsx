@@ -286,7 +286,7 @@ const EventDetails = () => {
               </div>
 
               {/* RSVP */}
-              {userId &&
+              {/* {userId &&
                 (event.attendees?.includes(userId) ? (
                   <button
                     className="w-full mt-6 px-4 py-3 bg-cyan-100 text-cyan-600 rounded-xl border border-cyan-300 font-bold cursor-pointer hover:bg-cyan-200 transition-all duration-300 shadow-lg"
@@ -301,7 +301,7 @@ const EventDetails = () => {
                   >
                     RSVP
                   </button>
-                ))}
+                ))} */}
             </div>
           ) : null}
         </div>

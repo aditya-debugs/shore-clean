@@ -23,6 +23,17 @@ const EventDetails = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userId, setUserId] = useState(null);
+  // Get current user from AuthContext
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUserId(user.id || user._id);
+      } catch {}
+    }
+  }, []);
 
   // Ratings (keeping localStorage for now since no backend implementation)
   const [rating, setRating] = useState(0);
@@ -48,7 +59,7 @@ const EventDetails = () => {
         setLoading(false);
       });
     // Fetch comments from MongoDB
-    fetch(`/api/events/${id}/comments`)
+    fetch(`/api/comments/${id}`)
       .then(res => res.json())
       .then(data => setComments(data))
       .catch(() => setComments([]));
@@ -109,13 +120,18 @@ const EventDetails = () => {
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const res = await fetch(`/api/events/${id}/comments`, {
+      const res = await fetch(`/api/comments/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: newComment }),
+        body: JSON.stringify({ text: newComment, userId }),
       });
       const data = await res.json();
-      setComments(data);
+      // If backend returns single comment, append; if array, replace
+      if (Array.isArray(data)) {
+        setComments(data);
+      } else {
+        setComments(prev => [...prev, data]);
+      }
       setNewComment("");
     } catch {
       // fallback: do nothing
@@ -125,11 +141,12 @@ const EventDetails = () => {
 
   const handleDeleteComment = async (commentId) => {
     try {
-      const res = await fetch(`/api/events/${id}/comments/${commentId}`, {
+      const res = await fetch(`/api/comments/${commentId}`, {
         method: "DELETE"
       });
-      const data = await res.json();
-      setComments(data);
+      if (res.ok) {
+        setComments(prev => prev.filter(c => c._id !== commentId));
+      }
     } catch {
       // fallback: do nothing
     }
@@ -264,14 +281,8 @@ const EventDetails = () => {
                     key={c._id}
                     className="flex justify-between items-center bg-white p-2 rounded-lg shadow mb-2"
                   >
-                    <div>
-                      <span className="text-gray-800">{c.text}</span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        by {c.userId?.name || "Anonymous"} •{" "}
-                        {new Date(c.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                    {c.userId?._id === user?._id && (
+                    <span className="text-gray-800">{c.text}</span>
+                    {String(c.userId) === String(userId) && (
                       <button
                         onClick={() => handleDeleteComment(c._id)}
                         className="text-red-500 hover:text-red-700"

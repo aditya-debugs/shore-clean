@@ -28,7 +28,14 @@ const Events = () => {
       setLoading(true);
       setError("");
       try {
-        const data = await getEvents({ page, limit });
+        const params = { page, limit };
+
+        // If user is an organizer (role 'org'), only show their events
+        if (currentUser && currentUser.role === "org") {
+          params.organizer = currentUser._id;
+        }
+
+        const data = await getEvents(params);
         setEvents(data.events || []);
         setTotalPages(data.totalPages || 1);
         setLoading(false);
@@ -39,7 +46,7 @@ const Events = () => {
     };
 
     fetchEvents();
-  }, [page, limit]);
+  }, [page, limit, currentUser]);
 
   const handleRSVP = async (eventId, alreadyRSVPed) => {
     if (!currentUser) {

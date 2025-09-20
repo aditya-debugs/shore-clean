@@ -10,12 +10,19 @@ import {
   Save,
   X,
   User,
-  Star,
+  QrCode,
+  Download,
+  CheckCircle,
+   Star,
   Heart,
   Trash2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Box from "@mui/material/Box";
+import Rating from "@mui/material/Rating";
+import Typography from "@mui/material/Typography";
+import QRCode from "../components/QRCode";
 import Comments from "../components/Comments";
 import StarRating from "../components/StarRating";
 import {
@@ -24,6 +31,9 @@ import {
   deleteEvent,
   rsvpForEvent,
   cancelRsvpForEvent,
+  registerForEvent,
+  getRegistrationStatus,
+  cancelRegistration,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { canEditEvent, canRSVPToEvents, isVolunteer } from "../utils/roleUtils";
@@ -48,6 +58,14 @@ const EventDetails = () => {
   const [totalRatings, setTotalRatings] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
 
+  // Registration state
+  const [registration, setRegistration] = useState(null);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+
+  // Comments state
+  const [comments, setComments] = useState([]);
+
   useEffect(() => {
     const fetchEventData = async () => {
       setLoading(true);
@@ -64,10 +82,27 @@ const EventDetails = () => {
       }
     };
 
-    if (id) {
-      fetchEventData();
+    fetchEventData();
+
+    // Fetch comments from MongoDB
+    fetch(`/api/comments/${id}`)
+      .then((res) => res.json())
+      .then((data) => setComments(data))
+      .catch(() => setComments([]));
+
+    // Check registration status if user is a volunteer
+    if (currentUser && isVolunteer(currentUser)) {
+      getRegistrationStatus(id)
+        .then((data) => {
+          if (data.registered) {
+            setRegistration(data.registration);
+          }
+        })
+        .catch(() => {
+          // User is not registered, which is fine
+        });
     }
-  }, [id]);
+  }, [id, currentUser]);
 
   // Separate useEffect for ratings that depends on currentUser
   useEffect(() => {
@@ -108,6 +143,51 @@ const EventDetails = () => {
     }
   };
 
+  const handleRegister = async () => {
+    if (!event || !currentUser) return;
+
+    setRegistrationLoading(true);
+    try {
+      const result = await registerForEvent(event._id);
+      setRegistration(result.registration);
+      setShowQR(true);
+      alert("Successfully registered for the event! Your QR code has been generated.");
+    } catch (error) {
+      console.error("Registration error:", error);
+      const message = error.response?.data?.message || "Could not register for event. Please try again.";
+      alert(message);
+    } finally {
+      setRegistrationLoading(false);
+    }
+  };
+
+  const handleCancelRegistration = async () => {
+    if (!event || !currentUser || !registration) return;
+
+    const confirmCancel = window.confirm("Are you sure you want to cancel your registration for this event?");
+    if (!confirmCancel) return;
+
+    try {
+      await cancelRegistration(event._id);
+      setRegistration(null);
+      setShowQR(false);
+      alert("Your registration has been cancelled.");
+    } catch (error) {
+      console.error("Cancel registration error:", error);
+      const message = error.response?.data?.message || "Could not cancel registration. Please try again.";
+      alert(message);
+    }
+  };
+
+  const downloadQR = () => {
+    const canvas = document.querySelector('#qr-code canvas');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = `event-${event.title}-qr.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  };
   const handleRating = async (newRating) => {
     if (ratingLoading || !currentUser?._id) return;
 
@@ -255,6 +335,13 @@ const EventDetails = () => {
                   <div className="flex gap-3">
                     {!isEditing ? (
                       <>
+                        <Link
+                          to={`/events/${event._id}/manage`}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200 font-medium"
+                        >
+                          <Users className="h-4 w-4" />
+                          Manage Volunteers
+                        </Link>
                         <button
                           onClick={handleEdit}
                           className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 font-medium"
@@ -498,29 +585,95 @@ const EventDetails = () => {
                     </div>
                   )}
 
-                  {/* RSVP Button - Temporarily disabled */}
-                  {/* {canRSVPToEvents(currentUser) && (
-                    <div className="mb-8">
-                      {event.attendees?.includes(currentUser._id) ? (
-                        <button
-                          onClick={() => handleRSVP(true)}
-                          className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors duration-200"
-                        >
-                          Cancel RSVP
-                        </button>
+                  {/* Volunteer Registration Section */}
+                  {isVolunteer(currentUser) && (
+                    <div className="mb-8 bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-cyan-600" />
+                        Volunteer Registration
+                      </h3>
+                      
+                      {registration ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 text-green-600 mb-4">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-medium">You are registered for this event!</span>
+                          </div>
+                          
+                          {/* Registration Status */}
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                              <div>
+                                <p className="text-sm text-gray-600">Status: <span className="font-medium text-green-700 capitalize">{registration.status}</span></p>
+                                <p className="text-sm text-gray-600">Registered: {new Date(registration.createdAt).toLocaleDateString()}</p>
+                                {registration.checkedInAt && (
+                                  <p className="text-sm text-gray-600">Checked In: {new Date(registration.checkedInAt).toLocaleString()}</p>
+                                )}
+                                {registration.checkedOutAt && (
+                                  <p className="text-sm text-gray-600">Checked Out: {new Date(registration.checkedOutAt).toLocaleString()}</p>
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setShowQR(!showQR)}
+                                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
+                                >
+                                  <QrCode className="h-4 w-4" />
+                                  {showQR ? 'Hide QR Code' : 'Show QR Code'}
+                                </button>
+                                
+                                <button
+                                  onClick={handleCancelRegistration}
+                                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                >
+                                  Cancel Registration
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* QR Code Display */}
+                          {showQR && registration.qrCode && (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                              <h4 className="text-lg font-medium text-gray-900 mb-4">Your Event QR Code</h4>
+                              <div className="flex justify-center mb-4" id="qr-code">
+                                <QRCode 
+                                  value={registration.qrCode} 
+                                  size={200}
+                                  level="M"
+                                  includeMargin={true}
+                                />
+                              </div>
+                              <p className="text-sm text-gray-600 mb-4">
+                                Present this QR code to event organizers for check-in and check-out.
+                              </p>
+                              <button
+                                onClick={downloadQR}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mx-auto"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download QR Code
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <button
-                          onClick={() => handleRSVP(false)}
-                          className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-colors duration-200"
-                        >
-                          RSVP for Event
-                        </button>
+                        <div className="text-center">
+                          <p className="text-gray-600 mb-4">
+                            Register as a volunteer for this event to receive your unique QR code for check-in.
+                          </p>
+                          <button
+                            onClick={handleRegister}
+                            disabled={registrationLoading}
+                            className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-400 text-white rounded-lg font-semibold transition-colors duration-200"
+                          >
+                            {registrationLoading ? 'Registering...' : 'Register as Volunteer'}
+                          </button>
+                        </div>
                       )}
-                      <p className="text-sm text-gray-600 mt-2">
-                        {event.attendees?.length || 0} people have RSVP'd
-                      </p>
                     </div>
-                  )} */}
+                  )}
                 </>
               )}
 

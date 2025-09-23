@@ -22,7 +22,6 @@ import AdminOrgProfile from "./pages/admin/OrgProfile";
 import OrganizationProfile from "./pages/OrganizationProfile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ChatCommunity from "./pages/ChatCommunity";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import OrganizationRoute from "./components/OrganizationRoute";
@@ -165,18 +164,6 @@ function App() {
                 <PrivateRoute>
                   <OrganizationRoute>
                     <Donations />
-                  </OrganizationRoute>
-                </PrivateRoute>
-              }
-            />
-
-            {/* Chat Community Route */}
-            <Route
-              path="/chat"
-              element={
-                <PrivateRoute>
-                  <OrganizationRoute>
-                    <ChatCommunity />
                   </OrganizationRoute>
                 </PrivateRoute>
               }

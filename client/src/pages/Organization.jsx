@@ -80,10 +80,6 @@ const Organization = () => {
     }
   };
 
-  const handleJoinCommunity = () => {
-    navigate("/chat");
-  };
-
   const handleEditProfile = () => {
     navigate("/organization-details");
   };
@@ -227,16 +223,6 @@ const Organization = () => {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-3">
-                      {isVolunteer(currentUser) && !isViewingOwnProfile && (
-                        <button
-                          onClick={handleJoinCommunity}
-                          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Join Community
-                        </button>
-                      )}
-
                       {canEdit && (
                         <button
                           onClick={handleEditProfile}

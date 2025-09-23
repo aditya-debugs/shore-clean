@@ -83,7 +83,6 @@ export const getNavigationItems = (user) => {
     return [
       { name: "Events", path: "/events" },
       { name: "Testimonials", onClick: "scrollToTestimonials" },
-      { name: "Community Chat", path: "/chat", isCtaButton: true },
     ];
   }
 

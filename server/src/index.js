@@ -16,6 +16,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const commentRoutes = require("./routes/commentRoutes.js");
 const ratingRoutes = require("./routes/ratingRoutes.js");
 const organizationRoutes = require("./routes/organizationRoutes");
+const communityRoutes = require("./routes/communityRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 
@@ -55,6 +58,9 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api", ratingRoutes);
 app.use("/api/organizations", organizationRoutes);
+app.use("/api/communities", communityRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // example protected route
 const { protect } = require("./middlewares/authMiddleware");
@@ -76,7 +82,14 @@ app.get("/api/health", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 ShoreClean server running on port ${PORT}`);
   console.log(`🌐 API available at http://localhost:${PORT}/api`);
 });
+
+// Initialize Socket.IO
+const SocketManager = require("./utils/socketManager");
+const socketManager = new SocketManager(server);
+
+// Make socket manager available globally for other parts of the application
+global.socketManager = socketManager;

@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Waves, LogOut, User, Settings } from "lucide-react";
+import {
+  Menu,
+  X,
+  Waves,
+  LogOut,
+  User,
+  Settings,
+  MessageCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useCommunity } from "../context/CommunityContext";
 import {
   isOrganizer,
   isVolunteer,
@@ -17,9 +26,16 @@ const Navbar = () => {
   const location = useLocation();
 
   const { currentUser, logout } = useAuth();
+  const { communities } = useCommunity();
   const isAuthenticated = !!currentUser;
   const userIsOrganizer = isOrganizer(currentUser);
   const userIsVolunteer = isVolunteer(currentUser);
+
+  // Check if user should see Community Chat
+  // - All volunteers (will show instructions if no communities, or community list if they have communities)
+  // - Organization users (they have their own community)
+  const shouldShowCommunityChat = userIsVolunteer || userIsOrganizer;
+
   const navigationItems = getNavigationItems(currentUser);
   const profilePath = getProfilePath(currentUser);
 
@@ -103,6 +119,18 @@ const Navbar = () => {
                       )}
                     </Link>
                   )
+                )}
+
+                {/* Community Chat Link - Show for volunteers who joined communities or organization users */}
+                {shouldShowCommunityChat && (
+                  <Link
+                    to="/community-chat"
+                    className="px-4 py-2 rounded-xl text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 font-medium relative group flex items-center"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Community Chat
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-cyan-500 group-hover:w-3/4 transition-all duration-300"></div>
+                  </Link>
                 )}
 
                 {/* User Menu */}
@@ -222,6 +250,18 @@ const Navbar = () => {
                         {item.name}
                       </Link>
                     )
+                  )}
+
+                  {/* Community Chat Link for Mobile - Show for volunteers who joined communities or organization users */}
+                  {shouldShowCommunityChat && (
+                    <Link
+                      to="/community-chat"
+                      className="px-4 py-2 rounded-lg text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-300 flex items-center"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Community Chat
+                    </Link>
                   )}
 
                   <button

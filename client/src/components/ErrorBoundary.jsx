@@ -15,8 +15,10 @@ class ErrorBoundary extends React.Component {
     // Log the error to console and external services
     console.error("Error Boundary caught an error:", error, errorInfo);
     this.setState({
-      error: error,
-      errorInfo: errorInfo,
+      error: error || new Error("Unknown error occurred"),
+      errorInfo: errorInfo || {
+        componentStack: "Component stack not available",
+      },
     });
   }
 
@@ -42,7 +44,8 @@ class ErrorBoundary extends React.Component {
                 <pre className="mt-2 text-sm overflow-auto">
                   {this.state.error && this.state.error.toString()}
                   <br />
-                  {this.state.errorInfo.componentStack}
+                  {this.state.errorInfo?.componentStack ||
+                    "Component stack not available"}
                 </pre>
               </details>
             )}

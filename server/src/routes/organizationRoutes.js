@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Organization = require("../models/Organization");
+const Community = require("../models/Community");
 const User = require("../models/User");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
@@ -89,6 +90,28 @@ router.post("/profile", protect, authorize("org"), async (req, res) => {
         { new: true, runValidators: true }
       );
       console.log("Organization updated successfully");
+
+      // Check if community exists for updated organization, create if not
+      console.log("Checking for existing community...");
+      const existingCommunity = await Community.findOne({
+        organizationId: organization._id,
+      });
+
+      if (!existingCommunity) {
+        console.log("Creating default community for existing organization...");
+        const community = new Community({
+          name: `${organizationName} Community`,
+          description: `Welcome to ${organizationName} community! Connect with other members and stay updated.`,
+          organizationId: organization._id,
+          createdBy: req.user.userId,
+          isPrivate: false,
+        });
+
+        await community.save();
+        console.log("Default community created successfully:", community._id);
+      } else {
+        console.log("Community already exists for this organization");
+      }
     } else {
       // Create new organization profile
       console.log("Creating new organization...");
@@ -113,6 +136,27 @@ router.post("/profile", protect, authorize("org"), async (req, res) => {
 
       await organization.save();
       console.log("Organization created successfully");
+
+      // Auto-create community for new organization
+      console.log("Creating default community for organization...");
+      const existingCommunity = await Community.findOne({
+        organizationId: organization._id,
+      });
+
+      if (!existingCommunity) {
+        const community = new Community({
+          name: `${organizationName} Community`,
+          description: `Welcome to ${organizationName} community! Connect with other members and stay updated.`,
+          organizationId: organization._id,
+          createdBy: req.user.userId,
+          isPrivate: false,
+        });
+
+        await community.save();
+        console.log("Default community created successfully:", community._id);
+      } else {
+        console.log("Community already exists for this organization");
+      }
     }
 
     // Update user's hasCompletedProfile flag
@@ -154,6 +198,68 @@ router.post("/profile", protect, authorize("org"), async (req, res) => {
     });
   }
 });
+
+// @route   POST /api/organizations/create-community
+// @desc    Create default community for organization (for existing orgs without community)
+// @access  Private (Organization only)
+router.post(
+  "/create-community",
+  protect,
+  authorize("org"),
+  async (req, res) => {
+    try {
+      console.log("=== Creating Default Community for Organization ===");
+      console.log("User ID:", req.user.userId);
+
+      // Find the organization
+      const organization = await Organization.findOne({
+        userId: req.user.userId,
+      });
+      if (!organization) {
+        return res
+          .status(404)
+          .json({ message: "Organization profile not found" });
+      }
+
+      console.log("Organization found:", organization.organizationName);
+
+      // Check if community already exists
+      const existingCommunity = await Community.findOne({
+        organizationId: organization._id,
+      });
+      if (existingCommunity) {
+        return res.status(400).json({
+          message: "Community already exists for this organization",
+          community: existingCommunity,
+        });
+      }
+
+      // Create the community
+      const community = new Community({
+        name: `${organization.organizationName} Community`,
+        description: `Welcome to ${organization.organizationName} community! Connect with other members and stay updated.`,
+        organizationId: organization._id,
+        createdBy: req.user.userId,
+        isPrivate: false,
+      });
+
+      await community.save();
+      console.log("Default community created successfully:", community._id);
+
+      res.status(201).json({
+        message: "Community created successfully",
+        community: community,
+      });
+    } catch (error) {
+      console.error("=== Error creating community ===");
+      console.error("Error details:", error);
+      res.status(500).json({
+        message: "Error creating community",
+        error: error.message,
+      });
+    }
+  }
+);
 
 // @route   GET /api/organizations/profile/:userId
 // @desc    Get organization profile by user ID

@@ -19,8 +19,10 @@ import {
   CheckCircle,
   Target,
   Heart,
+  Hash,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useCommunity } from "../context/CommunityContext";
 import { isVolunteer, isOrganizer } from "../utils/roleUtils";
 import api from "../utils/api";
 import Navbar from "../components/Navbar";
@@ -31,15 +33,24 @@ const Organization = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { getCommunityByOrganization, joinCommunity, communities } =
+    useCommunity();
   const [organization, setOrganization] = useState(null);
   const [events, setEvents] = useState([]);
+  const [community, setCommunity] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [joiningCommunity, setJoiningCommunity] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchOrganization();
     fetchOrganizationEvents();
+    fetchCommunityData();
   }, [id]);
+
+  // Check if user is already a member of this community
+  const isAlreadyMember =
+    community && communities.some((c) => c.community._id === community._id);
 
   const fetchOrganization = async () => {
     try {
@@ -80,8 +91,42 @@ const Organization = () => {
     }
   };
 
+  const fetchCommunityData = async () => {
+    try {
+      const communityData = await getCommunityByOrganization(id);
+      setCommunity(communityData.community);
+    } catch (err) {
+      console.log("No community found for this organization:", err);
+    }
+  };
+
+  const handleJoinCommunity = async () => {
+    if (!community || isAlreadyMember) return;
+
+    try {
+      setJoiningCommunity(true);
+      await joinCommunity(community._id);
+
+      // Refresh community data to update membership status
+      await fetchCommunityData();
+    } catch (err) {
+      console.error("Error joining community:", err);
+      setError("Failed to join community");
+    } finally {
+      setJoiningCommunity(false);
+    }
+  };
+
   const handleEditProfile = () => {
     navigate("/organization-details");
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   if (loading) {
@@ -394,6 +439,79 @@ const Organization = () => {
                   )}
                 </div>
               </div>
+
+              {/* Community Chat Section - Only show for volunteers */}
+              {isVolunteer(currentUser) && (
+                <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                  <div className="flex items-center mb-6">
+                    <MessageCircle className="h-6 w-6 text-cyan-500 mr-3" />
+                    <h3 className="text-xl font-bold text-gray-800">
+                      Community Chat
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Connect with other volunteers and stay updated on{" "}
+                      {organization.organizationName || organization.name}'s
+                      activities.
+                    </p>
+
+                    {community ? (
+                      <>
+                        <div className="flex items-center text-sm text-gray-500 space-x-4">
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 mr-1" />
+                            {community.memberCount} members
+                          </div>
+                          {community.lastMessageAt && (
+                            <div>
+                              Last active: {formatDate(community.lastMessageAt)}
+                            </div>
+                          )}
+                        </div>
+
+                        {isAlreadyMember ? (
+                          <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                            <span className="text-green-700 font-medium text-sm">
+                              You're already a member
+                            </span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleJoinCommunity}
+                            disabled={joiningCommunity}
+                            className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {joiningCommunity ? (
+                              <>
+                                <Loader className="h-5 w-5 mr-2 animate-spin" />
+                                Joining...
+                              </>
+                            ) : (
+                              <>
+                                <MessageCircle className="h-5 w-5 mr-2" />
+                                Join{" "}
+                                {organization.organizationName ||
+                                  organization.name}
+                                's Community
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-yellow-800 text-sm">
+                          This organization hasn't set up their community chat
+                          yet.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Organization Stats */}
               <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
